@@ -1,0 +1,190 @@
+import { Header } from "@/components/layout/header"
+import { Footer } from "@/components/layout/footer"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
+import { Bot, ArrowLeft, AlertTriangle, Brain, Shield, User } from "lucide-react"
+import Link from "next/link"
+
+export default function AIAdvisorDisclosurePage() {
+  return (
+    <div className="min-h-screen bg-slate-900">
+      <Header />
+
+      <div className="container mx-auto px-4 py-12">
+        <div className="max-w-4xl mx-auto">
+          {/* Back Button */}
+          <Link href="/disclosures" className="inline-flex items-center text-cyan-400 hover:text-cyan-300 mb-8">
+            <ArrowLeft className="w-4 h-4 mr-2" />
+            Back to Disclosures
+          </Link>
+
+          {/* Header Section */}
+          <div className="text-center mb-12">
+            <div className="w-16 h-16 bg-gradient-to-br from-violet-500 to-purple-500 rounded-2xl flex items-center justify-center mx-auto mb-6">
+              <Bot className="w-8 h-8 text-white" />
+            </div>
+            <h1 className="text-4xl font-bold text-white mb-4">AI Advisor Disclosure</h1>
+            <p className="text-xl text-gray-300">Information about artificial intelligence tools and limitations</p>
+          </div>
+
+          {/* Main Disclaimer */}
+          <Card className="bg-slate-800 border-slate-700 mb-8">
+            <CardHeader>
+              <CardTitle className="text-cyan-400 text-2xl">
+                Disclaimer for Eagle Investors LLC AI Advisor Bot
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="text-gray-300 leading-relaxed">
+              <p>
+                Eagle Investors LLC provides its AI Advisor Bot as an educational and informational tool designed to
+                assist users in understanding market trends, exploring investment opportunities, and developing
+                financial strategies. While the AI Advisor Bot leverages advanced algorithms and historical data to
+                provide insights, it is important to note the following:
+              </p>
+            </CardContent>
+          </Card>
+
+          {/* Disclosure Sections */}
+          <div className="space-y-8">
+            <Card className="bg-slate-800 border-slate-700">
+              <CardHeader>
+                <div className="flex items-center space-x-3">
+                  <div className="w-10 h-10 bg-gradient-to-br from-red-500 to-orange-500 rounded-lg flex items-center justify-center">
+                    <AlertTriangle className="w-5 h-5 text-white" />
+                  </div>
+                  <CardTitle className="text-cyan-400">Not a Substitute for Professional Advice</CardTitle>
+                </div>
+              </CardHeader>
+              <CardContent className="text-gray-300 leading-relaxed">
+                <p>
+                  The AI Advisor Bot is not a licensed financial advisor, and its outputs should not be interpreted as
+                  personalized financial, legal, or tax advice. Users should consult with a qualified professional for
+                  specific investment decisions.
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card className="bg-slate-800 border-slate-700">
+              <CardHeader>
+                <div className="flex items-center space-x-3">
+                  <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-lg flex items-center justify-center">
+                    <Brain className="w-5 h-5 text-white" />
+                  </div>
+                  <CardTitle className="text-cyan-400">Limitations of AI Capabilities</CardTitle>
+                </div>
+              </CardHeader>
+              <CardContent className="text-gray-300 leading-relaxed">
+                <p>
+                  The AI relies on historical data and programmed algorithms. It does not account for real-time market
+                  changes, individual financial circumstances, or unforeseen global events. As a result, its
+                  recommendations may not always reflect current market conditions or be tailored to individual goals.
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card className="bg-slate-800 border-slate-700">
+              <CardHeader>
+                <div className="flex items-center space-x-3">
+                  <div className="w-10 h-10 bg-gradient-to-br from-yellow-500 to-orange-500 rounded-lg flex items-center justify-center">
+                    <Shield className="w-5 h-5 text-white" />
+                  </div>
+                  <CardTitle className="text-cyan-400">No Guarantee of Accuracy or Success</CardTitle>
+                </div>
+              </CardHeader>
+              <CardContent className="text-gray-300 leading-relaxed">
+                <p>
+                  Investment strategies and market forecasts generated by the AI Advisor Bot are inherently subject to
+                  uncertainty. Past performance is not indicative of future results, and there is no guarantee that the
+                  information provided will result in profitable investments.
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card className="bg-slate-800 border-slate-700">
+              <CardHeader>
+                <div className="flex items-center space-x-3">
+                  <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-pink-500 rounded-lg flex items-center justify-center">
+                    <User className="w-5 h-5 text-white" />
+                  </div>
+                  <CardTitle className="text-cyan-400">User Responsibility</CardTitle>
+                </div>
+              </CardHeader>
+              <CardContent className="text-gray-300 leading-relaxed">
+                <p>
+                  All decisions based on insights from the AI Advisor Bot are solely the responsibility of the user.
+                  Eagle Investors LLC is not liable for any losses, damages, or negative outcomes resulting from
+                  reliance on the AI's recommendations.
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card className="bg-slate-800 border-slate-700">
+              <CardHeader>
+                <CardTitle className="text-cyan-400">Acknowledgment and Agreement</CardTitle>
+              </CardHeader>
+              <CardContent className="text-gray-300 leading-relaxed">
+                <p>
+                  By using the AI Advisor Bot, you acknowledge and accept its limitations and agree to utilize it at
+                  your own discretion. For detailed inquiries, professional guidance, or further assistance, please
+                  contact a licensed financial professional.
+                </p>
+                <p className="mt-4">
+                  For more information, please review our{" "}
+                  <Link href="/disclosures/terms-conditions" className="text-cyan-400 hover:text-cyan-300 underline">
+                    Terms of Service
+                  </Link>{" "}
+                  and{" "}
+                  <Link href="/disclosures/privacy-policy" className="text-cyan-400 hover:text-cyan-300 underline">
+                    Privacy Policy
+                  </Link>
+                  .
+                </p>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Important Notice */}
+          <div className="mt-12 bg-gradient-to-r from-red-900/20 to-orange-900/20 backdrop-blur-sm rounded-2xl p-8 border border-red-500/30">
+            <div className="flex items-start space-x-4">
+              <AlertTriangle className="w-8 h-8 text-red-400 mt-1 flex-shrink-0" />
+              <div>
+                <h3 className="text-xl font-bold text-red-400 mb-3">Important Notice</h3>
+                <p className="text-gray-300 leading-relaxed">
+                  The AI Advisor Bot is a supplementary tool and should never be your sole source of investment
+                  guidance. Always conduct your own research and consult with qualified financial professionals before
+                  making investment decisions. Market conditions can change rapidly, and AI systems may not capture all
+                  relevant factors affecting investment outcomes.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Contact Section */}
+          <div className="mt-12 bg-gradient-to-r from-slate-800/50 to-slate-700/50 backdrop-blur-sm rounded-2xl p-8 border border-slate-600/50 text-center">
+            <h2 className="text-2xl font-bold text-white mb-4">Need Professional Guidance?</h2>
+            <p className="text-gray-300 mb-6">
+              For personalized investment advice and professional financial planning, contact our licensed advisors.
+            </p>
+            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+              <Link href="/contact">
+                <Button className="bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 text-white px-8 py-3 rounded-xl font-semibold">
+                  Contact Our Advisors
+                </Button>
+              </Link>
+              <Link href="/advising">
+                <Button
+                  variant="outline"
+                  className="bg-transparent border-cyan-400 text-cyan-400 hover:bg-cyan-400 hover:text-slate-900 px-8 py-3 rounded-xl font-semibold"
+                >
+                  1-on-1 Advising Services
+                </Button>
+              </Link>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <Footer />
+    </div>
+  )
+}

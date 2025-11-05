@@ -1,0 +1,380 @@
+"use client";
+
+import { useState, useEffect } from "react";
+import { loadStripe } from "@stripe/stripe-js";
+import {
+  Elements,
+  CardElement,
+  useStripe,
+  useElements,
+} from "@stripe/react-stripe-js";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Loader2, CreditCard, CheckCircle, Shield, Lock } from "lucide-react";
+import { toast } from "@/hooks/use-toast";
+import Cookies from "js-cookie";
+
+// Initialize Stripe
+const stripePromise = loadStripe(
+  process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!
+);
+
+interface StripePaymentProps {
+  contractId: string;
+  amount: string;
+  productName: string;
+  subscriptionType?: "monthly" | "yearly";
+  onPaymentSuccess: (paymentData: any) => void;
+  onPaymentError: (error: string) => void;
+}
+
+// Payment form component that uses Stripe hooks
+function PaymentForm({
+  contractId,
+  amount,
+  productName,
+  subscriptionType = "monthly",
+  onPaymentSuccess,
+  onPaymentError,
+}: StripePaymentProps) {
+  const stripe = useStripe();
+  const elements = useElements();
+  const [isLoading, setIsLoading] = useState(false);
+  const [paymentStatus, setPaymentStatus] = useState<
+    "idle" | "processing" | "success" | "error"
+  >("idle");
+
+  const handleSubmit = async (event: React.FormEvent) => {
+    event.preventDefault();
+
+    if (!stripe || !elements) {
+      toast({
+        title: "Error",
+        description: "Payment system not ready. Please try again.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsLoading(true);
+    setPaymentStatus("processing");
+
+    try {
+      // Create payment intent
+      const token = Cookies.get("token");
+      console.log("🔑 Stripe token status:", token ? "Available" : "Guest mode");
+
+      console.log("🔄 Creating Stripe payment intent...");
+      console.log("Contract ID:", contractId);
+      console.log("Subscription Type:", subscriptionType);
+
+      const intentResponse = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/paypal/contracts/create-payment-intent`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            ...(token && { Authorization: `Bearer ${token}` }), // Only add Authorization header if token exists
+          },
+          body: JSON.stringify({
+            contractId,
+            subscriptionType,
+          }),
+        }
+      );
+
+      const intentData = await intentResponse.json();
+      console.log("✅ Payment intent created:", {
+        success: intentData.success,
+        paymentIntentId: intentData.paymentIntentId,
+        hasClientSecret: !!intentData.clientSecret,
+      });
+
+      if (!intentResponse.ok) {
+        throw new Error(
+          intentData.message || "Failed to create payment intent"
+        );
+      }
+
+      const { clientSecret, paymentIntentId } = intentData;
+
+      if (!clientSecret) {
+        throw new Error("No client secret received from server");
+      }
+
+      // Get card element
+      const cardElement = elements.getElement(CardElement);
+      if (!cardElement) {
+        throw new Error("Card element not found");
+      }
+
+      console.log("🔄 Confirming payment with Stripe...");
+
+      // Confirm payment
+      const { error, paymentIntent } = await stripe.confirmCardPayment(
+        clientSecret,
+        {
+          payment_method: {
+            card: cardElement,
+            billing_details: {
+              // You can add billing details here if needed
+            },
+          },
+        }
+      );
+
+      if (error) {
+        console.error("❌ Stripe confirmation error:", error);
+        throw new Error(error.message || "Payment failed");
+      }
+
+      if (paymentIntent.status !== "succeeded") {
+        console.error("❌ Payment intent status:", paymentIntent.status);
+        throw new Error("Payment was not successful");
+      }
+
+      console.log("✅ Payment confirmed successfully");
+      console.log("Payment Intent ID:", paymentIntent.id);
+
+      // Confirm with backend
+      console.log("🔄 Confirming payment with backend...");
+      const confirmResponse = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/paypal/contracts/confirm-payment`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            ...(token && { Authorization: `Bearer ${token}` }), // Only add Authorization header if token exists
+          },
+          body: JSON.stringify({
+            paymentIntentId,
+            contractId,
+          }),
+        }
+      );
+
+      const confirmData = await confirmResponse.json();
+      console.log("✅ Backend confirmation response:", confirmData);
+
+      if (!confirmResponse.ok) {
+        throw new Error(confirmData.message || "Payment confirmation failed");
+      }
+
+      const paymentData = {
+        paymentMethod: "stripe",
+        contractId,
+        amount,
+        transactionId: paymentIntent.id, // Use the actual payment intent ID from Stripe
+        contract: confirmData.contract,
+      };
+
+      setPaymentStatus("success");
+      console.log("🎉 Payment completed successfully!");
+
+      toast({
+        title: "Payment Successful",
+        description: "Your payment has been processed successfully!",
+      });
+
+      onPaymentSuccess(paymentData);
+    } catch (error: any) {
+      console.error("💥 Stripe payment error:", error);
+      setPaymentStatus("error");
+      toast({
+        title: "Payment Failed",
+        description: error.message || "Failed to process payment",
+        variant: "destructive",
+      });
+      onPaymentError(error.message || "Payment failed");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  if (paymentStatus === "success") {
+    return (
+      <Card className="border-green-200 bg-gradient-to-r from-green-50 to-emerald-50">
+        <CardContent className="p-8">
+          <div className="text-center">
+            <div className="mx-auto mb-4 h-16 w-16 rounded-full bg-green-100 flex items-center justify-center">
+              <CheckCircle className="h-10 w-10 text-green-600" />
+            </div>
+            <h3 className="text-2xl font-bold text-green-700 mb-2">
+              Payment Successful!
+            </h3>
+            <p className="text-green-600 mb-4">
+              Your payment of <span className="font-semibold">${amount}</span>{" "}
+              has been processed successfully.
+            </p>
+            <div className="bg-white/80 backdrop-blur-sm rounded-lg p-4 border border-green-200">
+              <p className="text-sm text-green-700">
+                You will receive a confirmation email shortly with your
+                transaction details.
+              </p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  return (
+    <Card className="shadow-lg border-0 bg-white">
+      <CardContent className="p-8">
+        <div className="space-y-6">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-2">
+              <CreditCard className="h-5 w-5 text-blue-600" />
+              <h3 className="text-lg font-semibold">Secure Payment</h3>
+            </div>
+            <div className="flex items-center space-x-2 text-sm text-green-600">
+              <Lock className="h-4 w-4" />
+              <span>SSL Secured</span>
+            </div>
+          </div>
+
+          <div className="bg-gradient-to-r from-gray-50 to-blue-50 p-4 rounded-lg border">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <p className="text-sm text-gray-600 mb-1">Product</p>
+                <p className="text-sm font-semibold text-gray-900">
+                  {productName}
+                </p>
+              </div>
+              <div>
+                <p className="text-sm text-gray-600 mb-1">Amount</p>
+                <p className="text-lg font-bold text-green-600">${amount}</p>
+              </div>
+              <div className="col-span-2">
+                <p className="text-sm text-gray-600 mb-1">Billing Cycle</p>
+                <p className="text-sm font-semibold text-gray-900">
+                  {subscriptionType === "yearly"
+                    ? "Annual Subscription"
+                    : "Monthly Subscription"}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-gray-700 flex items-center space-x-2">
+                <CreditCard className="h-4 w-4" />
+                <span>Card Information</span>
+              </label>
+              <div className="relative">
+                <div className="p-4 border-2 border-gray-200 rounded-lg bg-white hover:border-blue-300 focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-200 transition-all duration-200">
+                  <CardElement
+                    options={{
+                      style: {
+                        base: {
+                          fontSize: "16px",
+                          color: "#1f2937",
+                          fontFamily: "Inter, system-ui, sans-serif",
+                          fontWeight: "400",
+                          "::placeholder": {
+                            color: "#9ca3af",
+                          },
+                        },
+                        invalid: {
+                          color: "#ef4444",
+                        },
+                        complete: {
+                          color: "#059669",
+                        },
+                      },
+                      hidePostalCode: false,
+                    }}
+                  />
+                </div>
+              </div>
+            </div>
+
+            <Button
+              type="submit"
+              disabled={!stripe || isLoading}
+              className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-semibold py-3 px-4 rounded-lg transition-all duration-200 transform hover:scale-[1.02] disabled:hover:scale-100"
+            >
+              {isLoading ? (
+                <>
+                  <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                  Processing Payment...
+                </>
+              ) : (
+                <>
+                  <Shield className="mr-2 h-5 w-5" />
+                  Complete Secure Payment - ${amount}
+                </>
+              )}
+            </Button>
+          </form>
+
+          <div className="p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border border-blue-200">
+            <div className="flex items-center space-x-2 mb-3">
+              <Shield className="h-5 w-5 text-blue-600" />
+              <h4 className="text-sm font-semibold text-blue-800">
+                Secure Payment Processing
+              </h4>
+            </div>
+            <p className="text-sm text-blue-700 mb-3">
+              Your payment information is encrypted and secure. We accept all
+              major credit cards.
+            </p>
+            <div className="flex items-center justify-between text-xs text-blue-600">
+              <div className="flex items-center space-x-4">
+                <span className="flex items-center space-x-1">
+                  <Lock className="h-3 w-3" />
+                  <span>SSL Encrypted</span>
+                </span>
+                <span>PCI Compliant</span>
+                <span>Powered by Stripe</span>
+              </div>
+              <div className="flex space-x-2">
+                <span className="px-2 py-1 bg-white rounded text-blue-800 font-semibold">
+                  VISA
+                </span>
+                <span className="px-2 py-1 bg-white rounded text-blue-800 font-semibold">
+                  MC
+                </span>
+                <span className="px-2 py-1 bg-white rounded text-blue-800 font-semibold">
+                  AMEX
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+// Main component that wraps the form with Elements provider
+export function StripeElementsPayment(props: StripePaymentProps) {
+  const [stripeError, setStripeError] = useState<string | null>(null);
+
+  useEffect(() => {
+    // Validate Stripe configuration
+    if (!process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY) {
+      setStripeError("Stripe configuration missing");
+      return;
+    }
+  }, []);
+
+  if (stripeError) {
+    return (
+      <Card>
+        <CardContent className="p-6">
+          <div className="text-center text-red-600">
+            <p>Payment system configuration error: {stripeError}</p>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  return (
+    <Elements stripe={stripePromise}>
+      <PaymentForm {...props} />
+    </Elements>
+  );
+}

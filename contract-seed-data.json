@@ -1,0 +1,512 @@
+{
+  "contractTypes": [
+    {
+      "id": "basic-contract",
+      "name": "Basic Contract",
+      "category": "subscription",
+      "planType": "basic",
+      "description": "Advisory contract for Basic membership with educational content and general market insights",
+      "services": [
+        "Basic investment research and financial guidance",
+        "Access to educational content",
+        "General market insights",
+        "Non-personalized investment advice",
+        "Internet-based platform access"
+      ],
+      "features": [
+        "Market education content",
+        "Chatroom for Free Users",
+        "Basic market updates",
+        "Email support"
+      ],
+      "pricing": {
+        "monthly": {
+          "price": 0,
+          "originalPrice": 0,
+          "currency": "USD"
+        }
+      },
+      "terms": {
+        "type": "ongoing",
+        "renewalBasis": "monthly",
+        "discretionary": false,
+        "assetsUnderManagement": false,
+        "wrapFeePrograms": false
+      },
+      "legalDisclosures": {
+        "nonDiscretionary": true,
+        "noPersonalizedAdvice": true,
+        "clientControlsExecution": true,
+        "noAssetManagement": true
+      }
+    },
+    {
+      "id": "diamond-contract",
+      "name": "Diamond Contract",
+      "category": "subscription",
+      "planType": "diamond",
+      "description": "Advisory contract for Diamond membership with premium trading tools and market analysis",
+      "services": [
+        "Investment research and financial advice",
+        "Options, stock, digital assets, and cryptocurrency trading guidance",
+        "Fee-based subscription service",
+        "Impersonal recommendations via online platform",
+        "Non-discretionary investment advice"
+      ],
+      "features": [
+        "Stock Trades Entry & Exit Alerts",
+        "AI Advisor",
+        "Option Day Trade Alerts",
+        "Option Swing Trades Alerts",
+        "24/7 Chat Room (Diamond Chat)",
+        "Daily Live Trading Stream (Every Market Day)",
+        "Investment Recommendations",
+        "Daily & Weekly Watchlists",
+        "Unusual Options Activity Cheat Sheet",
+        "AI Stock Breakouts",
+        "Analyst Grades & Insider Orders",
+        "Darkpool and Scalp Ideas",
+        "Small account challenges",
+        "Custom notifications for key market events",
+        "Priority customer support",
+        "Access to exclusive trading webinars",
+        "Community access to Diamond members"
+      ],
+      "pricing": {
+        "monthly": {
+          "price": 70,
+          "originalPrice": 97,
+          "currency": "USD",
+          "discount": "28%",
+          "savings": 27
+        },
+        "annual": {
+          "price": 760,
+          "originalPrice": 1164,
+          "currency": "USD",
+          "discount": "35%",
+          "savings": 404
+        }
+      },
+      "terms": {
+        "type": "ongoing",
+        "renewalBasis": "monthly_or_annual",
+        "discretionary": false,
+        "assetsUnderManagement": false,
+        "wrapFeePrograms": false
+      },
+      "legalDisclosures": {
+        "nonDiscretionary": true,
+        "impersonalRecommendations": true,
+        "clientControlsExecution": true,
+        "noAssetManagement": true,
+        "clientCanImposeRestrictions": true
+      },
+      "fees": {
+        "structure": "subscription_based",
+        "advisoryFee": "included_in_subscription",
+        "additionalFees": []
+      },
+      "clientObligations": [
+        "Provide accurate financial information",
+        "Review and understand all recommendations",
+        "Make independent investment decisions",
+        "Notify adviser of material changes"
+      ]
+    },
+    {
+      "id": "infinity-contract",
+      "name": "Infinity Contract",
+      "category": "subscription",
+      "planType": "infinity",
+      "description": "Advisory contract for Infinity membership with advanced tools and VIP support",
+      "services": [
+        "Premium investment research and financial advice",
+        "Advanced market screening and analysis",
+        "Professional Quant Trading Script Access",
+        "Priority advisory support",
+        "Enhanced AI advisor capabilities",
+        "VIP customer support"
+      ],
+      "features": [
+        "All Diamond features",
+        "Advanced market screening (20-25 securities daily)",
+        "Professional Quant Trading Script Access via TradingView",
+        "Direct Infinity Advisory Tickets for personalized support",
+        "Bi-weekly Eagle Portfolios Review Stream (Recorded)",
+        "Priority Challenge SMS Alerts for time-sensitive opportunities",
+        "AI Advisor (Enhanced) with advanced market intelligence",
+        "Complete education library with video archive access",
+        "Custom analysis tools and chart level indicators",
+        "VIP advisory support with priority response times",
+        "Exclusive Infinity Discord channels and community access",
+        "Private Infinity trading chat room",
+        "Infinity challenge participation and trading competitions",
+        "24/7 market monitoring and alert system"
+      ],
+      "pricing": {
+        "monthly": {
+          "price": 127,
+          "originalPrice": 187,
+          "currency": "USD",
+          "discount": "32%",
+          "savings": 60
+        },
+        "annual": {
+          "price": 1270,
+          "originalPrice": 2244,
+          "currency": "USD",
+          "discount": "43%",
+          "savings": 974
+        }
+      },
+      "terms": {
+        "type": "ongoing",
+        "renewalBasis": "monthly_or_annual",
+        "discretionary": false,
+        "assetsUnderManagement": false,
+        "wrapFeePrograms": false
+      },
+      "legalDisclosures": {
+        "nonDiscretionary": true,
+        "impersonalRecommendations": true,
+        "clientControlsExecution": true,
+        "noAssetManagement": true,
+        "clientCanImposeRestrictions": true
+      },
+      "fees": {
+        "structure": "subscription_based",
+        "advisoryFee": "included_in_subscription",
+        "additionalFees": []
+      },
+      "clientObligations": [
+        "Provide accurate financial information",
+        "Review and understand all recommendations",
+        "Make independent investment decisions",
+        "Notify adviser of material changes",
+        "Participate actively in VIP programs"
+      ]
+    },
+    {
+      "id": "investment-advising-contract",
+      "name": "Investment Advising Contract",
+      "category": "mentorship",
+      "planType": "mentorship",
+      "description": "Personalized investment advisory services contract focused on long-term investment strategies",
+      "services": [
+        "Individual portfolio review and analysis",
+        "Investment strategy development",
+        "Asset allocation recommendations",
+        "Risk assessment and management",
+        "Retirement planning guidance",
+        "Educational resources on investment principles",
+        "Regular portfolio review sessions"
+      ],
+      "features": [
+        "3 Hours of 1-on-1 Sessions",
+        "3 Months Diamond",
+        "Setup Tax Advantaged Account",
+        "Learn How To Invest",
+        "Financial Plan Creation",
+        "Portfolio optimization strategies",
+        "Tax-efficient investing guidance",
+        "Retirement planning assistance"
+      ],
+      "pricing": {
+        "oneTime": {
+          "price": 786,
+          "originalPrice": 987,
+          "memberPrice": 786,
+          "currency": "USD",
+          "savings": 201
+        }
+      },
+      "terms": {
+        "type": "fixed_term",
+        "duration": "12_months",
+        "discretionary": false,
+        "assetsUnderManagement": false,
+        "personalizedAdvice": true
+      },
+      "legalDisclosures": {
+        "nonDiscretionary": true,
+        "personalizedAdvice": true,
+        "noTradeExecution": true,
+        "clientControlsAccounts": true
+      },
+      "fees": {
+        "structure": "one_time_fee",
+        "advisoryFee": 786,
+        "paymentSchedule": "upfront",
+        "refundPolicy": "pro_rated_after_30_days"
+      },
+      "clientObligations": [
+        "Provide complete and accurate financial information",
+        "Attend scheduled review sessions",
+        "Implement recommendations at own discretion",
+        "Notify adviser of material changes in financial situation"
+      ]
+    },
+    {
+      "id": "trading-tutor-contract",
+      "name": "Trading Tutor Contract",
+      "category": "mentorship",
+      "planType": "mentorship",
+      "description": "Personalized trading strategy guidance and tutoring contract",
+      "services": [
+        "Personalized trading strategy guidance",
+        "Online voice and video call sessions",
+        "Day trading and swing trading education",
+        "Options trading strategies",
+        "Risk management techniques",
+        "Technical analysis training",
+        "Trading psychology coaching"
+      ],
+      "features": [
+        "3 hours of 1-on-1 trading tutoring sessions",
+        "3 months of Diamond Membership (includes platform access)",
+        "Education in day trading, swing trading, and options",
+        "Tuning of trading strategy and market timing",
+        "Active risk management techniques",
+        "Technical analysis mastery",
+        "Psychology of trading and entry/exit strategy development"
+      ],
+      "pricing": {
+        "oneTime": {
+          "price": 786,
+          "originalPrice": 987,
+          "memberPrice": 786,
+          "currency": "USD",
+          "savings": 201
+        }
+      },
+      "terms": {
+        "type": "one_time_service",
+        "sessionCount": 3,
+        "sessionDuration": "1_hour_each",
+        "additionalBenefits": "3_months_diamond_membership",
+        "discretionary": false,
+        "assetsUnderManagement": false
+      },
+      "legalDisclosures": {
+        "nonDiscretionary": true,
+        "noAccountManagement": true,
+        "noCustodyOfFunds": true,
+        "educationalPurpose": true
+      },
+      "fees": {
+        "structure": "one_time_charge",
+        "totalFee": 786,
+        "paymentSchedule": "upfront",
+        "includedServices": ["tutoring_sessions", "diamond_membership"]
+      },
+      "clientObligations": [
+        "Attend scheduled tutoring sessions",
+        "Actively participate in learning process",
+        "Apply risk management principles",
+        "Make independent trading decisions"
+      ]
+    },
+    {
+      "id": "ultimate-contract",
+      "name": "Ultimate Contract",
+      "category": "mentorship",
+      "planType": "mentorship",
+      "description": "Comprehensive 8-hour mentorship program with premium access and ultimate membership",
+      "services": [
+        "Ultimate Membership Access to Eagle Investors Discord Server",
+        "Proprietary trading alerts and signals",
+        "Fundamental and technical analysis",
+        "Options flow analysis and indicators",
+        "Educational content on investing strategies",
+        "Community forums and discussions",
+        "Priority customer support",
+        "AI Advisory panel access"
+      ],
+      "features": [
+        "8 Hours of 1-on-1 Sessions",
+        "1 Year Diamond ($1,164 value)",
+        "All Inclusive Package",
+        "8 Hours of Trading Tutor OR 8 Hours of Advising",
+        "Personalized strategy development",
+        "Complete portfolio review",
+        "Advanced risk management techniques",
+        "Long-term mentorship relationship",
+        "Access to proprietary trading alerts and signals",
+        "Access to fundamental and technical analysis",
+        "Access to options flow analysis and indicators",
+        "Full access to the AI Advisory panel",
+        "Access to weekly watch lists",
+        "Access to Eagle's Trading Systems"
+      ],
+      "pricing": {
+        "oneTime": {
+          "price": 1820,
+          "originalPrice": 2497,
+          "memberPrice": 1827,
+          "currency": "USD",
+          "savings": 677
+        }
+      },
+      "terms": {
+        "type": "comprehensive_program",
+        "sessionCount": 8,
+        "sessionDuration": "1_hour_each",
+        "additionalBenefits": "1_year_diamond_membership",
+        "discretionary": false,
+        "individualizedAdvice": false
+      },
+      "legalDisclosures": {
+        "nonDiscretionary": true,
+        "noIndividualizedAdvice": true,
+        "noCustodyOfFunds": true,
+        "educationalPurpose": true
+      },
+      "fees": {
+        "structure": "one_time_comprehensive_fee",
+        "totalFee": 1820,
+        "paymentSchedule": "upfront",
+        "includedServices": [
+          "mentorship_sessions",
+          "diamond_membership",
+          "ultimate_access"
+        ]
+      },
+      "clientObligations": [
+        "Attend all scheduled mentorship sessions",
+        "Actively engage in learning process",
+        "Utilize provided resources responsibly",
+        "Make independent investment decisions"
+      ]
+    },
+    {
+      "id": "script-contract",
+      "name": "Script Contract",
+      "category": "script",
+      "planType": "script",
+      "description": "Advisory contract for access to proprietary quantitative trading scripts via TradingView",
+      "services": [
+        "Access to proprietary custom quantitative trading script",
+        "PineScript-based algorithmic tools",
+        "TradingView platform delivery",
+        "Real-time algorithmic signals",
+        "Advanced technical indicators",
+        "Multi-timeframe analysis tools"
+      ],
+      "features": [
+        "Real-time algorithmic buy/sell signals",
+        "Advanced technical indicators",
+        "Multi-timeframe analysis tools",
+        "Custom momentum-based algorithmic signals",
+        "Comprehensive user guide for interpretation and application",
+        "TradingView invite-only access",
+        "Rigorously tested script logic"
+      ],
+      "pricing": {
+        "monthly": {
+          "price": 99,
+          "originalPrice": 129,
+          "currency": "USD",
+          "discount": "23%",
+          "savings": 30
+        },
+        "annual": {
+          "price": 990,
+          "originalPrice": 1290,
+          "currency": "USD",
+          "discount": "23%",
+          "savings": 300
+        }
+      },
+      "terms": {
+        "type": "ongoing_access",
+        "renewalBasis": "monthly",
+        "accessMethod": "tradingview_invite",
+        "cancellation": "end_of_billing_cycle",
+        "discretionary": false
+      },
+      "legalDisclosures": {
+        "informationalPurpose": true,
+        "educationalPurpose": true,
+        "notTailoredToIndividual": true,
+        "noAccountManagement": true,
+        "noTradeExecution": true
+      },
+      "fees": {
+        "structure": "subscription_based",
+        "monthlyFee": 99,
+        "annualFee": 990,
+        "paymentSchedule": "recurring",
+        "cancellationPolicy": "end_of_cycle"
+      },
+      "clientObligations": [
+        "Use script for informational purposes only",
+        "Make independent trading decisions",
+        "Understand script limitations",
+        "Comply with TradingView terms of service"
+      ]
+    }
+  ],
+  "contractTermsAndConditions": {
+    "standardClauses": {
+      "termination": {
+        "clientRights": "Client may terminate at any time with written notice",
+        "adviserRights": "Adviser may terminate with 30 days written notice",
+        "effectiveDate": "Termination effective at end of current billing period",
+        "refundPolicy": "Pro-rated refunds for unused portions (where applicable)"
+      },
+      "feesAndPayment": {
+        "paymentTerms": "Fees due in advance of service period",
+        "lateFees": "1.5% monthly charge on overdue amounts",
+        "disputeResolution": "Good faith negotiation required before legal action",
+        "currencyExchange": "All fees in USD unless otherwise specified"
+      },
+      "liability": {
+        "limitationOfLiability": "Adviser liability limited to fees paid in preceding 12 months",
+        "noGuarantees": "No guarantee of investment performance or profits",
+        "clientResponsibility": "Client responsible for all investment decisions",
+        "indemnification": "Client agrees to indemnify adviser for certain claims"
+      },
+      "confidentiality": {
+        "clientInformation": "All client information kept strictly confidential",
+        "exceptions": "Disclosure permitted for legal compliance or with client consent",
+        "dataProtection": "Reasonable measures taken to protect client data",
+        "retention": "Client information retained per regulatory requirements"
+      },
+      "disputeResolution": {
+        "governingLaw": "Agreement governed by Delaware state law",
+        "arbitration": "Disputes resolved through binding arbitration",
+        "venue": "Arbitration conducted in Delaware",
+        "costs": "Each party bears own arbitration costs unless otherwise awarded"
+      }
+    }
+  },
+  "regulatoryCompliance": {
+    "advisersAct": {
+      "registration": "Eagle Investors LLC registered as investment adviser",
+      "fiduciaryDuty": "Adviser acts in client's best interest",
+      "disclosure": "Form ADV provided to all advisory clients",
+      "recordKeeping": "Records maintained per SEC requirements"
+    },
+    "stateRequirements": {
+      "licensing": "Properly licensed in applicable states",
+      "notices": "Required state notices provided to clients",
+      "fees": "State filing fees paid and current",
+      "examinations": "Subject to regulatory examinations"
+    },
+    "clientProtections": {
+      "rightToTerminate": "Client right to terminate without penalty",
+      "feeDisclosure": "All fees clearly disclosed in advance",
+      "conflictDisclosure": "Potential conflicts of interest disclosed",
+      "complaintProcess": "Client complaint process clearly defined"
+    }
+  },
+  "contractMetadata": {
+    "version": "2025.1",
+    "lastUpdated": "2025-11-05",
+    "effectiveDate": "2025-01-01",
+    "reviewSchedule": "Annual review required",
+    "approvedBy": "Legal and Compliance Department",
+    "nextReviewDate": "2026-01-01"
+  }
+}
