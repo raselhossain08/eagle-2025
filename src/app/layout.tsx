@@ -8,6 +8,8 @@ export const metadata: Metadata = {
 };
 import toast, { Toaster } from "react-hot-toast";
 import { AuthProvider } from "@/context/authContext";
+import { AnalyticsProvider } from "@/context/analyticsContext";
+import { AnalyticsTracker } from "@/components/common/AnalyticsTracker";
 
 export default function RootLayout({
   children,
@@ -18,8 +20,11 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning={true}>
       <body suppressHydrationWarning={true}>
         <AuthProvider>
-          {children}
-          <Toaster />
+          <AnalyticsProvider>
+            <AnalyticsTracker />
+            {children}
+            <Toaster />
+          </AnalyticsProvider>
         </AuthProvider>
       </body>
     </html>
