@@ -2,7 +2,17 @@ import { api, ApiResponse, PaginatedResponse } from '../core/api-client';
 
 // Subscription Types
 export type SubscriptionType = "None" | "Basic" | "Diamond" | "Infinity" | "Script";
-export type SubscriptionStatus = "active" | "inactive" | "pending" | "cancelled" | "suspended" | "paused";
+export type SubscriptionStatus =
+  | "active"
+  | "inactive"
+  | "pending"
+  | "cancelled"
+  | "suspended"
+  | "paused"
+  | "expired"
+  | "none"
+  | "trial"
+  | "past_due";
 
 // Interface definitions
 export interface Subscription {
@@ -29,6 +39,52 @@ export interface Subscription {
   metadata?: Record<string, any>;
   createdAt: string;
   updatedAt: string;
+
+  // Backend field names (for compatibility)
+  subscriberId?: string;
+  firstName?: string;
+  lastName?: string;
+  name?: string;
+  email?: string;
+  phone?: string | null;
+  company?: string | null;
+  country?: string;
+  subscription?: string;           // Backend: plan name
+  subscriptionStatus?: SubscriptionStatus;  // Backend: status
+  currentPlan?: string;            // Backend: plan display name
+  currentPlanId?: string;
+  planType?: string;
+  mrr?: number;
+  totalRevenue?: number;
+  totalSpent?: number;
+  lifetimeValue?: number;
+  churnRisk?: {
+    score: number;
+    level: string;
+  };
+  openTickets?: number;
+  lastLoginAt?: string | null;
+  isActive?: boolean;
+  subscriptionStartDate?: string;  // Backend: start date
+  subscriptionEndDate?: string | null;  // Backend: end date
+  lastBillingDate?: string | null;
+  trialEndsAt?: string | null;
+  adminNotes?: string;
+  planChangeHistory?: Array<{
+    fromPlan: string;
+    toPlan: string;
+    fromBillingCycle: string;
+    toBillingCycle: string;
+    changeDate: string;
+    priceChange: number;
+  }>;
+  scheduledPlanChange?: {
+    newPlanId: string;
+    newPlanName: string;
+    newBillingCycle: string;
+    effectiveDate: string;
+    scheduledAt: string;
+  };
 }
 
 export interface SubscriptionStatusResponse {
