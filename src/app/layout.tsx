@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import { Suspense } from "react";
 
 export const metadata: Metadata = {
   title:
@@ -7,12 +8,8 @@ export const metadata: Metadata = {
   description:
     "Discover how our registered investment advisor equips clients with institution-style market tools, curated alerts, and personalized advisory services to help navigate every market cycle.",
   icons: {
-    icon: [
-      { url: "/favicon.svg", type: "image/svg+xml" },
-    ],
-    apple: [
-      { url: "/icon.svg", type: "image/svg+xml" },
-    ],
+    icon: [{ url: "/favicon.svg", type: "image/svg+xml" }],
+    apple: [{ url: "/icon.svg", type: "image/svg+xml" }],
   },
 };
 import toast, { Toaster } from "react-hot-toast";
@@ -30,7 +27,9 @@ export default function RootLayout({
       <body suppressHydrationWarning={true}>
         <AuthProvider>
           <AnalyticsProvider>
-            <AnalyticsTracker />
+            <Suspense fallback={null}>
+              <AnalyticsTracker />
+            </Suspense>
             {children}
             <Toaster />
           </AnalyticsProvider>

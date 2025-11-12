@@ -576,9 +576,9 @@ export const getAllContracts = async (params: {
 };
 
 /**
- * Get contract by ID (Requires auth or valid signing token)
+ * Get signed contract by ID (Requires auth or valid signing token)
  */
-export const getContractById = async (contractId: string): Promise<SignedContract> => {
+export const getSignedContractById = async (contractId: string): Promise<SignedContract> => {
   const token = Cookies.get("token");
 
   const response = await fetch(`${API_URL}/contracts/${contractId}`, {
