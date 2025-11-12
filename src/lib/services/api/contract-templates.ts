@@ -137,10 +137,70 @@ export const getContractTemplates = async (params: GetTemplatesParams = {}): Pro
 };
 
 /**
+ * Get all contract templates (PUBLIC - no authentication required)
+ * Use this for public-facing pages like checkout
+ */
+export const getPublicContractTemplates = async (params: GetTemplatesParams = {}): Promise<{
+  templates: ContractTemplate[];
+  total: number;
+  page: number;
+  totalPages: number;
+}> => {
+  const searchParams = new URLSearchParams();
+
+  Object.entries(params).forEach(([key, value]) => {
+    if (value !== undefined && value !== null && value !== '') {
+      searchParams.append(key, value.toString());
+    }
+  });
+
+  const response = await fetch(`${API_URL}/contracts/public/templates?${searchParams.toString()}`, {
+    method: "GET",
+    headers: {
+      "Content-Type": "application/json",
+    },
+  });
+
+  const data = await response.json();
+
+  if (!response.ok) {
+    throw new Error(data.message || "Failed to fetch contract templates");
+  }
+
+  return {
+    templates: data.data || [],
+    total: data.pagination?.total || 0,
+    page: data.pagination?.page || 1,
+    totalPages: data.pagination?.totalPages || 1,
+  };
+};
+
+/**
  * Get a specific contract template by ID (Public - no auth required)
  */
 export const getContractTemplateById = async (templateId: string): Promise<ContractTemplate> => {
   const response = await fetch(`${API_URL}/contract-templates/${templateId}`, {
+    method: "GET",
+    headers: {
+      "Content-Type": "application/json",
+    },
+  });
+
+  const data = await response.json();
+
+  if (!response.ok) {
+    throw new Error(data.message || "Failed to fetch contract template");
+  }
+
+  return data.data;
+};
+
+/**
+ * Get a specific contract template by ID (PUBLIC - no authentication required)
+ * Use this for public-facing pages like checkout
+ */
+export const getPublicContractTemplateById = async (templateId: string): Promise<ContractTemplate> => {
+  const response = await fetch(`${API_URL}/contracts/public/templates/${templateId}`, {
     method: "GET",
     headers: {
       "Content-Type": "application/json",
@@ -314,7 +374,7 @@ export const initiateContractSigning = async (
 }> => {
   const token = Cookies.get("token");
 
-  const response = await fetch(`${API_URL}/contracts/enhanced/initiate`, {
+  const response = await fetch(`${API_URL}/contracts/initiate`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -341,7 +401,7 @@ export const getContractForSigning = async (
   token: string
 ): Promise<SignedContract> => {
   const response = await fetch(
-    `${API_URL}/contracts/enhanced/sign/${contractId}?signerId=${signerId}&token=${token}`,
+    `${API_URL}/contracts/sign/${contractId}?signerId=${signerId}&token=${token}`,
     {
       method: "GET",
       headers: {
@@ -367,7 +427,7 @@ export const startSigningSession = async (
   signerId: string,
   token?: string
 ): Promise<{ success: boolean; sessionId: string }> => {
-  const response = await fetch(`${API_URL}/contracts/enhanced/${contractId}/sign-session`, {
+  const response = await fetch(`${API_URL}/contracts/${contractId}/sign-session`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -400,7 +460,7 @@ export const collectSigningEvidence = async (
     userAgent?: string;
   }
 ): Promise<{ success: boolean }> => {
-  const response = await fetch(`${API_URL}/contracts/enhanced/${contractId}/evidence`, {
+  const response = await fetch(`${API_URL}/contracts/${contractId}/evidence`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -444,7 +504,7 @@ export const submitSignature = async (
   contract: SignedContract;
   message: string;
 }> => {
-  const response = await fetch(`${API_URL}/contracts/enhanced/${contractId}/signatures`, {
+  const response = await fetch(`${API_URL}/contracts/${contractId}/signatures`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -498,7 +558,7 @@ export const getAllContracts = async (params: {
     }
   });
 
-  const response = await fetch(`${API_URL}/contracts/enhanced/all?${searchParams.toString()}`, {
+  const response = await fetch(`${API_URL}/contracts/all?${searchParams.toString()}`, {
     method: "GET",
     headers: {
       "Content-Type": "application/json",
@@ -521,7 +581,7 @@ export const getAllContracts = async (params: {
 export const getContractById = async (contractId: string): Promise<SignedContract> => {
   const token = Cookies.get("token");
 
-  const response = await fetch(`${API_URL}/contracts/enhanced/${contractId}`, {
+  const response = await fetch(`${API_URL}/contracts/${contractId}`, {
     method: "GET",
     headers: {
       "Content-Type": "application/json",
@@ -544,7 +604,7 @@ export const getContractById = async (contractId: string): Promise<SignedContrac
 export const downloadContractCertificate = async (contractId: string): Promise<Blob> => {
   const token = Cookies.get("token");
 
-  const response = await fetch(`${API_URL}/contracts/enhanced/${contractId}/certificate`, {
+  const response = await fetch(`${API_URL}/contracts/${contractId}/certificate`, {
     method: "GET",
     headers: {
       ...(token && { Authorization: `Bearer ${token}` }),
@@ -570,7 +630,7 @@ export const verifyEvidenceIntegrity = async (
   contract: SignedContract;
   timestamp: string;
 }> => {
-  const response = await fetch(`${API_URL}/contracts/enhanced/${contractId}/verify/${hash}`, {
+  const response = await fetch(`${API_URL}/contracts/${contractId}/verify/${hash}`, {
     method: "GET",
     headers: {
       "Content-Type": "application/json",

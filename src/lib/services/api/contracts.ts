@@ -135,6 +135,14 @@ export const signContract = async (
 ): Promise<SignedContract> => {
   const token = Cookies.get("token");
 
+  // Log what we're sending
+  console.log("🔍 Signing contract with data:", {
+    productType: contractData.productType,
+    subscriptionType: contractData.subscriptionType,
+    name: contractData.name,
+    email: contractData.email,
+  });
+
   const response = await fetch(`${API_URL}/contracts/sign`, {
     method: "POST",
     headers: {
@@ -147,6 +155,7 @@ export const signContract = async (
   const data = await response.json();
 
   if (!response.ok) {
+    console.error("❌ Contract signing failed:", data);
     // Special handling for "Contract already exists" case (legacy error handling)
     if (
       data.message === "Contract already exists for this product" &&

@@ -22,6 +22,8 @@ interface PayPalPaymentProps {
   subscriptionType?: "monthly" | "yearly";
   onPaymentSuccess: (paymentData: any) => void;
   onPaymentError: (error: string) => void;
+  discountCode?: string;
+  discountAmount?: number;
 }
 
 export function PayPalPayment({
@@ -31,6 +33,8 @@ export function PayPalPayment({
   subscriptionType = "monthly",
   onPaymentSuccess,
   onPaymentError,
+  discountCode,
+  discountAmount,
 }: PayPalPaymentProps) {
   const paypalRef = useRef<HTMLDivElement>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -80,11 +84,18 @@ export function PayPalPayment({
       // Add preconnect for faster loading
       const preconnect = document.createElement("link");
       preconnect.rel = "preconnect";
-      preconnect.href = process.env.NEXT_PUBLIC_PAYPAL_SDK_URL?.replace('/sdk/js', '') || "https://www.paypal.com";
+      preconnect.href =
+        process.env.NEXT_PUBLIC_PAYPAL_SDK_URL?.replace("/sdk/js", "") ||
+        "https://www.paypal.com";
       document.head.appendChild(preconnect);
 
       const script = document.createElement("script");
-      script.src = `${process.env.NEXT_PUBLIC_PAYPAL_SDK_URL || "https://www.paypal.com/sdk/js"}?client-id=${process.env.NEXT_PUBLIC_PAYPAL_CLIENT_ID}&currency=USD&intent=capture&disable-funding=credit,card`;
+      script.src = `${
+        process.env.NEXT_PUBLIC_PAYPAL_SDK_URL ||
+        "https://www.paypal.com/sdk/js"
+      }?client-id=${
+        process.env.NEXT_PUBLIC_PAYPAL_CLIENT_ID
+      }&currency=USD&intent=capture&disable-funding=credit,card`;
       script.async = true;
 
       const loadTimeout = setTimeout(() => {
@@ -201,7 +212,10 @@ export function PayPalPayment({
             setPaymentStatus("processing");
 
             const token = Cookies.get("token");
-            console.log("🔑 Capture token status:", token ? "Available" : "Guest mode");
+            console.log(
+              "🔑 Capture token status:",
+              token ? "Available" : "Guest mode"
+            );
 
             console.log("Capturing PayPal payment:", data.orderID);
 
@@ -431,20 +445,25 @@ export function PayPalPayment({
   return (
     <div className="space-y-6">
       {/* Payment Information Display */}
-      <PaymentInfoDisplay 
+      <PaymentInfoDisplay
         productName={productName}
         amount={parseFloat(amount) || 0}
         subscriptionType={subscriptionType}
         businessInfo={{
           name: process.env.NEXT_PUBLIC_BUSINESS_NAME || "Eagle Investors",
-          supportEmail: process.env.NEXT_PUBLIC_CONTACT_EMAIL || "support@eagle-investors.com",
-          website: process.env.NEXT_PUBLIC_WORDPRESS_URL || "https://eagle-investors.com",
+          supportEmail:
+            process.env.NEXT_PUBLIC_CONTACT_EMAIL ||
+            "support@eagle-investors.com",
+          website:
+            process.env.NEXT_PUBLIC_WORDPRESS_URL ||
+            "https://eagle-investors.com",
           phone: process.env.NEXT_PUBLIC_BUSINESS_PHONE,
         }}
       />
 
       <Card className="bg-brand-bg-light border-brand-border">
-        <CardContent className="p-6">{paymentStatus === "processing" && (
+        <CardContent className="p-6">
+          {paymentStatus === "processing" && (
             <div className="mb-4 p-4 bg-blue-500/10 border border-blue-500/30 rounded-lg">
               <div className="flex items-center space-x-2">
                 <Loader2 className="w-5 h-5 animate-spin text-blue-400" />

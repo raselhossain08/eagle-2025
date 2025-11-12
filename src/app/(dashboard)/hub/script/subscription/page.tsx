@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -10,107 +10,178 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { CheckCircle, Zap, Gem, Infinity } from "lucide-react";
+import { CheckCircle, Zap, Gem, Infinity, Loader2 } from "lucide-react";
+import { useAuth } from "@/context/authContext";
+import { getPublicPlans, type Plan } from "@/lib/services/api/plan";
+import { updateSubscription } from "@/lib/services/api/subscription";
 import { cn } from "@/lib/utils";
 import { Separator } from "@/components/ui/separator";
-import { mockUser as savedUser } from "@/lib/data/script.data";
+import toast from "react-hot-toast";
+import { SubscriptionContractModal } from "@/components/subscription/subscription-contract-modal";
 
-const subscriptionTiers = [
-  {
-    name: "Basic",
-    monthlyPrice: "Free",
-    annualPrice: "Free",
-    originalMonthlyPrice: null,
-    originalAnnualPrice: null,
-    monthlySavings: null,
-    annualSavings: null,
-    description: "Educational resources and basic market information",
-    icon: Zap,
-    iconBg: "bg-gray-600",
-    borderColor: "border-gray-600",
-    buttonColor: "bg-gray-600 hover:bg-gray-700",
-    buttonText: "Downgrade to Eagle Basic",
-    isPopular: false,
-    isPremium: false,
-    glowClass: "",
-    features: [
-      "Market education content",
-      "Chatroom for Free Users",
-      "Basic market updates",
-      "Email support",
-    ],
-  },
-  {
-    name: "Diamond",
-    monthlyPrice: "$76",
-    annualPrice: "$760",
-    originalMonthlyPrice: "$97",
-    originalAnnualPrice: "$1,164",
-    monthlySavings: "Save 21%",
-    annualSavings: "Save 35%",
-    description: "Investment services and educational resources*",
-    icon: Gem,
-    iconBg: "bg-blue-600",
-    borderColor: "border-brand-cyan",
-    buttonColor: "bg-brand-cyan hover:bg-brand-cyan/90",
-    buttonText: "Current Plan",
-    isPopular: true,
-    isPremium: false,
-    glowClass: "shadow-glow-cyan",
-    features: [
-      "Stock Trades Entry & Exit Alerts",
-      "AI Advisor",
-      "Option Day Trade Alerts",
-      "Option Swing Trades Alerts",
-      "24/7 Chat Room (Diamond Chat)",
-      "Daily Live Trading Stream (Every Market Day)",
-      "Investment Recommendations",
-      "Daily & Weekly Watchlists",
-      "Unusual Options Activity Cheat Sheet",
-      "AI Stock Breakouts",
-      "Analyst Grades & Insider Orders",
-      "Darkpool and Scalp Ideas",
-    ],
-  },
-  {
-    name: "Infinity",
-    monthlyPrice: "$127",
-    annualPrice: "$1,270",
-    originalMonthlyPrice: "$187",
-    originalAnnualPrice: "$2,244",
-    monthlySavings: "Save 32%",
-    annualSavings: "Save 43%",
-    description: "Comprehensive investment service with educational tools*",
-    icon: Infinity,
-    iconBg: "bg-orange-500",
-    borderColor: "border-yellow-500",
-    buttonColor:
-      "bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600",
-    buttonText: "UPGRADE TO INFINITY NOW",
-    isPopular: false,
-    isPremium: true,
-    glowClass: "shadow-glow-yellow",
-    features: [
-      "All Diamond features",
-      "Advanced market screening (20-25 securities)",
-      "Professional Quant Trading Script Access*",
-      "Direct Infinity Advisory Tickets",
-      "Bi-weekly Eagle Portfolios Review Stream (Recorded)",
-      "Priority Challenge SMS Alerts",
-      "AI Advisor (Enhanced)",
-      "Complete education library",
-      "Custom analysis tools",
-      "VIP advisory support",
-    ],
-  },
-];
+// Dynamic subscription tiers interface
+interface SubscriptionTier {
+  name: string;
+  monthlyPrice: string;
+  annualPrice: string;
+  originalMonthlyPrice: string | null;
+  originalAnnualPrice: string | null;
+  monthlySavings: string | null;
+  annualSavings: string | null;
+  description: string;
+  icon: any;
+  iconBg: string;
+  borderColor: string;
+  buttonColor: string;
+  buttonText: string;
+  isPopular: boolean;
+  isPremium: boolean;
+  glowClass: string;
+  features: string[];
+}
+
+// Dynamic subscription tiers loaded from API
+let subscriptionTiers: SubscriptionTier[] = [];
 
 export default function SubscriptionPage() {
-  // Change the user subscription from "Diamond" to "None" to represent Eagle Basic
-  // Allow subscription to be "None", "Diamond", or "Infinity"
-  type SubscriptionType = "None" | "Diamond" | "Infinity";
-  const user = { ...savedUser, subscription: "None" as SubscriptionType };
+  const { profile, refreshProfile } = useAuth();
   const [isAnnual, setIsAnnual] = useState(false);
+  const [isUpdating, setIsUpdating] = useState(false);
+  const [paymentModalOpen, setPaymentModalOpen] = useState(false);
+  const [selectedPackage, setSelectedPackage] = useState<
+    "basic" | "diamond" | "infinity"
+  >("diamond");
+  const [plansLoading, setPlansLoading] = useState(true);
+
+  // Initialize subscription tiers from API
+  useEffect(() => {
+    const initializeSubscriptionTiers = async () => {
+      try {
+        setPlansLoading(true);
+        const plans = await getPublicPlans();
+        const subscriptionPlans = plans
+          .filter((plan) => plan.planType === "subscription" && plan.isActive)
+          .sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0));
+
+        subscriptionTiers = subscriptionPlans.map((plan: Plan) => {
+          const isBasic = plan.category === "basic";
+          const isDiamond = plan.category === "diamond";
+          const isInfinity = plan.category === "infinity";
+
+          const monthlyPricing = plan.pricing?.monthly;
+          const yearlyPricing = plan.pricing?.yearly;
+
+          return {
+            name: plan.displayName || plan.name,
+            monthlyPrice:
+              typeof monthlyPricing === "number"
+                ? `$${monthlyPricing}`
+                : (monthlyPricing as any)?.price
+                ? `$${(monthlyPricing as any).price}`
+                : "Free",
+            annualPrice:
+              typeof yearlyPricing === "number"
+                ? `$${yearlyPricing}`
+                : (yearlyPricing as any)?.price
+                ? `$${(yearlyPricing as any).price}`
+                : "Free",
+            originalMonthlyPrice:
+              typeof monthlyPricing === "object" &&
+              (monthlyPricing as any)?.originalPrice
+                ? `$${(monthlyPricing as any).originalPrice}`
+                : null,
+            originalAnnualPrice:
+              typeof yearlyPricing === "object" &&
+              (yearlyPricing as any)?.originalPrice
+                ? `$${(yearlyPricing as any).originalPrice}`
+                : null,
+            monthlySavings:
+              typeof monthlyPricing === "object"
+                ? (monthlyPricing as any)?.discount || null
+                : null,
+            annualSavings:
+              typeof yearlyPricing === "object"
+                ? (yearlyPricing as any)?.discount || null
+                : null,
+            description: plan.description || "Professional investment service",
+            icon: isBasic ? Zap : isDiamond ? Gem : Infinity,
+            iconBg: isBasic
+              ? "bg-gray-600"
+              : isDiamond
+              ? "bg-blue-600"
+              : "bg-orange-500",
+            borderColor: isBasic
+              ? "border-gray-600"
+              : isDiamond
+              ? "border-brand-cyan"
+              : "border-yellow-500",
+            buttonColor: isBasic
+              ? "bg-gray-600 hover:bg-gray-700"
+              : isDiamond
+              ? "bg-brand-cyan hover:bg-brand-cyan/90"
+              : "bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600",
+            buttonText: isBasic
+              ? "Downgrade to Basic"
+              : isDiamond
+              ? "UPGRADE TO DIAMOND NOW"
+              : "UPGRADE TO INFINITY NOW",
+            isPopular: plan.isPopular || isDiamond,
+            isPremium: isInfinity,
+            glowClass: isDiamond
+              ? "shadow-glow-cyan"
+              : isInfinity
+              ? "shadow-glow-yellow"
+              : "",
+            features: plan.features || [],
+          };
+        });
+      } catch (error) {
+        console.error("Failed to fetch subscription tiers:", error);
+        toast.error("Failed to load subscription plans");
+      } finally {
+        setPlansLoading(false);
+      }
+    };
+
+    initializeSubscriptionTiers();
+  }, []);
+
+  if (!profile || plansLoading) {
+    return (
+      <div className="min-h-screen bg-brand-bg-dark flex items-center justify-center">
+        <Card className="bg-brand-bg-light border-brand-border p-8 text-center">
+          <div className="flex items-center gap-3 justify-center mb-4">
+            <Loader2 className="w-6 h-6 animate-spin text-brand-primary" />
+            <span className="text-white font-semibold">
+              {!profile
+                ? "Loading profile..."
+                : "Loading subscription plans..."}
+            </span>
+          </div>
+        </Card>
+      </div>
+    );
+  }
+
+  const user = {
+    subscription: profile.subscription as
+      | "Diamond"
+      | "Infinity"
+      | "None"
+      | "Basic"
+      | "Script",
+  };
+
+  const handleUpgradeClick = (packageType: "diamond" | "infinity") => {
+    setSelectedPackage(packageType);
+    setPaymentModalOpen(true);
+  };
+
+  const handlePaymentSuccess = async () => {
+    setPaymentModalOpen(false);
+    await refreshProfile();
+    toast.success("Subscription upgraded successfully!");
+  };
 
   return (
     <div className="space-y-8">
@@ -348,6 +419,15 @@ export default function SubscriptionPage() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Subscription Contract Modal */}
+      <SubscriptionContractModal
+        isOpen={paymentModalOpen}
+        onClose={() => setPaymentModalOpen(false)}
+        subscriptionType={isAnnual ? "yearly" : "monthly"}
+        packageType={selectedPackage}
+        onPaymentSuccess={handlePaymentSuccess}
+      />
     </div>
   );
 }

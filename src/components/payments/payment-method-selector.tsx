@@ -15,6 +15,8 @@ interface PaymentMethodSelectorProps {
   subscriptionType?: "monthly" | "yearly";
   onPaymentSuccess: (paymentData: any) => void;
   onPaymentError?: (error: string) => void;
+  discountCode?: string;
+  discountAmount?: number;
 }
 
 type PaymentMethod = "paypal" | "stripe" | null;
@@ -26,6 +28,8 @@ export function PaymentMethodSelector({
   subscriptionType = "monthly",
   onPaymentSuccess,
   onPaymentError = () => {},
+  discountCode,
+  discountAmount,
 }: PaymentMethodSelectorProps) {
   // Start with no method selected so users can choose
   const [selectedMethod, setSelectedMethod] = useState<PaymentMethod>(null);
@@ -71,6 +75,8 @@ export function PaymentMethodSelector({
           subscriptionType={subscriptionType}
           onPaymentSuccess={handlePaymentSuccess}
           onPaymentError={handlePaymentError}
+          discountCode={discountCode}
+          discountAmount={discountAmount}
         />
       </div>
     );
@@ -104,6 +110,8 @@ export function PaymentMethodSelector({
           subscriptionType={subscriptionType}
           onPaymentSuccess={handlePaymentSuccess}
           onPaymentError={handlePaymentError}
+          discountCode={discountCode}
+          discountAmount={discountAmount}
         />
       </div>
     );
@@ -192,7 +200,9 @@ export function PaymentMethodSelector({
       </div>
 
       <div className="text-center pt-4">
-        <div className="text-2xl font-bold mb-2 text-white">Total: ${amount}</div>
+        <div className="text-2xl font-bold mb-2 text-white">
+          Total: ${amount}
+        </div>
         <p className="text-sm text-gray-500">
           All payments are secure and encrypted
         </p>

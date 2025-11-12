@@ -26,6 +26,8 @@ interface StripePaymentProps {
   subscriptionType?: "monthly" | "yearly";
   onPaymentSuccess: (paymentData: any) => void;
   onPaymentError: (error: string) => void;
+  discountCode?: string;
+  discountAmount?: number;
 }
 
 // Payment form component that uses Stripe hooks
@@ -36,6 +38,8 @@ function PaymentForm({
   subscriptionType = "monthly",
   onPaymentSuccess,
   onPaymentError,
+  discountCode,
+  discountAmount,
 }: StripePaymentProps) {
   const stripe = useStripe();
   const elements = useElements();
@@ -62,7 +66,10 @@ function PaymentForm({
     try {
       // Create payment intent
       const token = Cookies.get("token");
-      console.log("🔑 Stripe token status:", token ? "Available" : "Guest mode");
+      console.log(
+        "🔑 Stripe token status:",
+        token ? "Available" : "Guest mode"
+      );
 
       console.log("🔄 Creating Stripe payment intent...");
       console.log("Contract ID:", contractId);

@@ -32,7 +32,9 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL;
 
 // Helper function to calculate cookie expiry based on subscription duration
 const getCookieExpiry = (duration: string): number => {
-  const durationConfig = SUBSCRIPTION_DURATIONS.find(d => d.value === duration);
+  const durationConfig = SUBSCRIPTION_DURATIONS.find(
+    (d) => d.value === duration
+  );
   return durationConfig ? durationConfig.days : 7; // Default to 7 days
 };
 
@@ -73,17 +75,17 @@ const handleApiCall = async (
     }
 
     // Store token securely with dynamic expiry based on subscription
-    const expiry = subscriptionDuration 
+    const expiry = subscriptionDuration
       ? getCookieExpiry(subscriptionDuration)
-      : (user?.cookieExpiry || 7); // Default to 7 days if not specified
-    
+      : user?.cookieExpiry || 7; // Default to 7 days if not specified
+
     const cookieOptions = {
       expires: expiry,
       path: "/",
       secure: process.env.NODE_ENV === "production",
       sameSite: "strict" as const,
     };
-    
+
     Cookies.set("token", token, cookieOptions);
 
     return { token, user, success: true };
@@ -164,25 +166,42 @@ const SUBSCRIPTION_PLANS = [
     name: "Basic Plan",
     price: "Free",
     priceColor: "text-green-400",
-    features: ["Educational content", "Basic market insights", "Community forum access", "Email support"],
-    available: true
+    features: [
+      "Educational content",
+      "Basic market insights",
+      "Community forum access",
+      "Email support",
+    ],
+    available: true,
   },
   {
     id: "diamond",
     name: "Diamond Plan",
     price: "$99/month",
     priceColor: "text-blue-400",
-    features: ["All Basic features", "Advanced analytics", "Premium signals", "Priority support", "Personal advisor"],
-    available: true
+    features: [
+      "All Basic features",
+      "Advanced analytics",
+      "Premium signals",
+      "Priority support",
+      "Personal advisor",
+    ],
+    available: true,
   },
   {
     id: "infinity",
     name: "Infinity Plan",
     price: "$199/month",
     priceColor: "text-purple-400",
-    features: ["All Diamond features", "Unlimited access", "1-on-1 coaching", "VIP community", "Custom strategies"],
-    available: true
-  }
+    features: [
+      "All Diamond features",
+      "Unlimited access",
+      "1-on-1 coaching",
+      "VIP community",
+      "Custom strategies",
+    ],
+    available: true,
+  },
 ];
 
 // Admin configurable subscription durations
@@ -215,13 +234,13 @@ export default function LoginPage() {
     formState: { errors: registerErrors },
   } = useForm<RegisterFormData>({
     resolver: zodResolver(registerSchema),
-    defaultValues: { 
-      firstName: "", 
-      lastName: "", 
-      email: "", 
+    defaultValues: {
+      firstName: "",
+      lastName: "",
+      email: "",
       password: "",
       subscriptionType: "basic",
-      subscriptionDuration: "1week"
+      subscriptionDuration: "1week",
     },
   });
 
@@ -259,7 +278,9 @@ export default function LoginPage() {
 
   const onRegisterSubmit = async (data: RegisterFormData) => {
     setIsLoading(true);
-    toast.loading("Creating account with 1-week Basic access...", { duration: Infinity });
+    toast.loading("Creating account with 1-week Basic access...", {
+      duration: Infinity,
+    });
 
     // Add subscription data to registration - automatically set to basic 1 week
     const registrationData = {
@@ -281,7 +302,9 @@ export default function LoginPage() {
       login(result.token);
 
       toast.dismiss();
-      toast.success("Registration successful! 1-week Basic access activated. Redirecting...");
+      toast.success(
+        "Registration successful! 1-week Basic access activated. Redirecting..."
+      );
 
       // Small delay for better UX
       setTimeout(() => {
@@ -377,9 +400,17 @@ export default function LoginPage() {
                       )}
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="password" className="text-white">
-                        Password
-                      </Label>
+                      <div className="flex items-center justify-between">
+                        <Label htmlFor="password" className="text-white">
+                          Password
+                        </Label>
+                        <Link
+                          href="/forgot-password"
+                          className="text-xs text-cyan-400 hover:text-cyan-300 hover:underline"
+                        >
+                          Forgot password?
+                        </Link>
+                      </div>
                       <Input
                         id="password"
                         type="password"
@@ -561,8 +592,9 @@ export default function LoginPage() {
               </span>
             </div>
             <p className="text-gray-300 text-sm">
-              Create a free account and get 1 week of Basic plan access automatically. 
-              Start your trading journey with educational content and community support.
+              Create a free account and get 1 week of Basic plan access
+              automatically. Start your trading journey with educational content
+              and community support.
             </p>
             <div className="mt-2 flex items-center space-x-4 text-xs text-gray-400">
               <span>✓ Educational Content</span>

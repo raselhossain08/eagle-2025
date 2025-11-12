@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import {
   Card,
   CardContent,
@@ -37,12 +38,27 @@ import {
   DiamondUpgradeButton,
   InfinityUpgradeButton,
 } from "@/components/subscription/upgrade-button";
-import { getPricingInfo, formatPriceWithPeriod } from "@/lib/config/pricing.config";
+import {
+  getPricingInfo,
+  formatPriceWithPeriod,
+} from "@/lib/config/pricing.config";
 
 export default function TechnologyPage() {
   const router = useRouter();
-  const infinityPricing = getPricingInfo('infinity', 'monthly');
-  
+  const [infinityPrice, setInfinityPrice] = useState<string>("$127");
+
+  useEffect(() => {
+    const loadPricing = async () => {
+      try {
+        const pricing = await getPricingInfo("infinity", "monthly");
+        setInfinityPrice(formatPriceWithPeriod(pricing.price));
+      } catch (error) {
+        console.error("Failed to load pricing:", error);
+      }
+    };
+    loadPricing();
+  }, []);
+
   return (
     <div className="min-h-screen bg-eagle-background">
       <Header />
@@ -196,35 +212,39 @@ export default function TechnologyPage() {
 
                   <div className="pt-4 space-y-3">
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                      <Button 
+                      <Button
                         onClick={() => {
-                          router.push('/scripts');
+                          router.push("/scripts");
                         }}
                         variant="outline"
                         className="w-full border-2 border-eagle-primary text-eagle-primary hover:bg-eagle-primary/10 bg-eagle-primary/5 font-semibold py-3 shadow-md hover:shadow-lg transition-all duration-300 transform hover:scale-[1.02]"
                       >
                         View All Scripts
                       </Button>
-                      <Button 
+                      <Button
                         onClick={() => {
                           try {
                             // Create cart item from the package
                             const cartItem = {
-                              id: 'quantitative-trading-script',
-                              name: 'Quantitative Trading Script',
+                              id: "quantitative-trading-script",
+                              name: "Quantitative Trading Script",
                               price: 47,
                               originalPrice: 47,
-                              description: 'Powerful algorithmic trading script with advanced features',
-                              type: "script-purchase"
+                              description:
+                                "Powerful algorithmic trading script with advanced features",
+                              type: "script-purchase",
                             };
-                            
+
                             // Save to localStorage
-                            localStorage.setItem('cart', JSON.stringify([cartItem]));
-                            
+                            localStorage.setItem(
+                              "cart",
+                              JSON.stringify([cartItem])
+                            );
+
                             // Navigate to checkout using Next.js router
-                            router.push('/checkout');
+                            router.push("/checkout");
                           } catch (error) {
-                            console.error('Error in script purchase:', error);
+                            console.error("Error in script purchase:", error);
                           }
                         }}
                         className="w-full bg-gradient-to-r from-eagle-primary to-eagle-primary/80 hover:from-eagle-primary/90 hover:to-eagle-primary/70 text-white font-semibold py-3 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-[1.02]"
@@ -234,13 +254,13 @@ export default function TechnologyPage() {
                     </div>
                     <div className="text-center">
                       <p className="text-sm text-eagle-muted-foreground mb-2">
-                      Or get better value with:
+                        Or get better value with:
                       </p>
                       <InfinityUpgradeButton
                         currentPackage="basic"
                         size="lg"
                         variant="outline"
-                        customText={`Purchase Infinity - ${formatPriceWithPeriod(infinityPricing.price)} - Includes Scripts + More`}
+                        customText={`Purchase Infinity - ${infinityPrice} - Includes Scripts + More`}
                         className="w-full border-2 border-amber-500 text-amber-500 hover:bg-amber-500/20 bg-amber-500/5 font-semibold py-3 shadow-md hover:shadow-lg transition-all duration-300 transform hover:scale-[1.02]"
                       />
                     </div>
@@ -354,7 +374,7 @@ export default function TechnologyPage() {
                         currentPackage="basic"
                         size="lg"
                         variant="outline"
-                        customText={`Purchase Infinity - ${formatPriceWithPeriod(infinityPricing.price)} - Best Value`}
+                        customText={`Purchase Infinity - ${infinityPrice} - Best Value`}
                         className="w-full border-2 border-amber-500 text-amber-500 hover:bg-amber-500/20 bg-amber-500/5 font-semibold py-3 shadow-md hover:shadow-lg transition-all duration-300 transform hover:scale-[1.02]"
                       />
                     </div>
@@ -488,7 +508,7 @@ export default function TechnologyPage() {
                         currentPackage="basic"
                         size="lg"
                         variant="outline"
-                        customText={`Get Infinity Access - ${formatPriceWithPeriod(infinityPricing.price)}`}
+                        customText={`Get Infinity Access - ${infinityPrice}`}
                         className="w-full border-2 border-amber-500 text-amber-500 hover:bg-amber-500/20 bg-amber-500/5 font-semibold py-3 shadow-md hover:shadow-lg transition-all duration-300 transform hover:scale-[1.02]"
                       />
                     </div>
@@ -574,7 +594,10 @@ export default function TechnologyPage() {
                     >
                       24/7 Active Community
                     </Badge>
-                    <Badge variant="outline" className="font-semibold text-eagle-foreground">
+                    <Badge
+                      variant="outline"
+                      className="font-semibold text-eagle-foreground"
+                    >
                       All Membership Tiers
                     </Badge>
                   </div>

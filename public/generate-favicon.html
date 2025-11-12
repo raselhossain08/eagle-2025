@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Generate Eagle Investors Favicon</title>
+</head>
+<body>
+    <h1>Eagle Investors Favicon Generator</h1>
+    <p>Right-click on each canvas and "Save image as..." to download the favicon files.</p>
+    
+    <div style="margin: 20px 0;">
+        <h3>favicon.ico (32x32)</h3>
+        <canvas id="favicon32" width="32" height="32" style="border: 1px solid #ccc; image-rendering: pixelated; width: 128px; height: 128px;"></canvas>
+    </div>
+    
+    <div style="margin: 20px 0;">
+        <h3>favicon-16x16.png</h3>
+        <canvas id="favicon16" width="16" height="16" style="border: 1px solid #ccc; image-rendering: pixelated; width: 128px; height: 128px;"></canvas>
+    </div>
+    
+    <div style="margin: 20px 0;">
+        <h3>favicon-32x32.png</h3>
+        <canvas id="favicon32png" width="32" height="32" style="border: 1px solid #ccc; image-rendering: pixelated; width: 128px; height: 128px;"></canvas>
+    </div>
+    
+    <div style="margin: 20px 0;">
+        <h3>apple-touch-icon.png (180x180)</h3>
+        <canvas id="favicon180" width="180" height="180" style="border: 1px solid #ccc; width: 180px; height: 180px;"></canvas>
+    </div>
+
+    <script>
+        function drawFavicon(canvas) {
+            const ctx = canvas.getContext('2d');
+            const size = canvas.width;
+            
+            // Background - gradient from cyan to blue
+            const gradient = ctx.createLinearGradient(0, 0, size, size);
+            gradient.addColorStop(0, '#06b6d4'); // cyan-500
+            gradient.addColorStop(1, '#3b82f6'); // blue-500
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, size, size);
+            
+            // Calculate font size based on canvas size
+            const fontSize = Math.floor(size * 0.5);
+            ctx.font = `bold ${fontSize}px Arial, sans-serif`;
+            ctx.fillStyle = '#ffffff';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            
+            // Draw "EI" text
+            ctx.fillText('EI', size / 2, size / 2);
+        }
+
+        // Generate all favicon sizes
+        drawFavicon(document.getElementById('favicon32'));
+        drawFavicon(document.getElementById('favicon16'));
+        drawFavicon(document.getElementById('favicon32png'));
+        drawFavicon(document.getElementById('favicon180'));
+        
+        console.log('Favicons generated! Right-click on each canvas and save as PNG.');
+        console.log('For favicon.ico, save the 32x32 canvas as PNG first, then convert it to .ico format using an online tool.');
+    </script>
+</body>
+</html>
