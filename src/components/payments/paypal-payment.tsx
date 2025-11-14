@@ -8,14 +8,13 @@ import { toast } from "@/hooks/use-toast";
 import { PaymentInfoDisplay } from "@/components/payments/payment-info-display";
 import Cookies from "js-cookie";
 
-// PayPal Configuration - Live Account Credentials
-const PAYPAL_MODE = "live";
-const PAYPAL_CLIENT_ID =
-  "AWbwj0ColfRdhTER5lNkzUiOwmM6TJX3lAIqnZvtBfqO7zHAQC6_tZBtYYx21fH62d2JAm2mbIOAO6BO";
-const PAYPAL_CLIENT_SECRET =
-  "EP5VgCo2Xd_T_dqYarcfbnK6KzrIFUT8GleLXwCY9VaARqR5GeavzjQpgRh-fZovlbMLPFX8fPWB-7ri";
-const PAYPAL_API = "https://api.paypal.com";
-const PAYPAL_SDK_URL = "https://www.paypal.com/sdk/js";
+// PayPal Configuration - Use environment variables
+const PAYPAL_MODE = process.env.NEXT_PUBLIC_PAYPAL_MODE || "live";
+const PAYPAL_CLIENT_ID = process.env.NEXT_PUBLIC_PAYPAL_CLIENT_ID || "";
+const PAYPAL_CLIENT_SECRET = process.env.PAYPAL_CLIENT_SECRET || "";
+const PAYPAL_API = process.env.PAYPAL_API || "https://api.paypal.com";
+const PAYPAL_SDK_URL =
+  process.env.NEXT_PUBLIC_PAYPAL_SDK_URL || "https://www.paypal.com/sdk/js";
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "https://eagleinvest.us/api";
 
 // Extend the global Window interface
