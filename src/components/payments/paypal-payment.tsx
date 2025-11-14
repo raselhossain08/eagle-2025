@@ -65,19 +65,6 @@ export function PayPalPayment({
     }
   };
 
-  // Ensure component is mounted (client-side only) and preload SDK
-  useEffect(() => {
-    setIsMounted(true);
-
-    // Start loading PayPal SDK immediately to reduce wait time
-    if (typeof window !== "undefined" && !isPayPalLoaded()) {
-      console.log("🚀 Preloading PayPal SDK...");
-      loadPayPalScript().catch((err) => {
-        console.error("Preload failed:", err);
-      });
-    }
-  }, []);
-
   // Check if PayPal SDK is already loaded
   const isPayPalLoaded = () => {
     return (
@@ -177,6 +164,19 @@ export function PayPalPayment({
       console.log("📝 PayPal script element added to document head");
     });
   };
+
+  // Ensure component is mounted (client-side only) and preload SDK
+  useEffect(() => {
+    setIsMounted(true);
+
+    // Start loading PayPal SDK immediately to reduce wait time
+    if (typeof window !== "undefined" && !isPayPalLoaded()) {
+      console.log("🚀 Preloading PayPal SDK...");
+      loadPayPalScript().catch((err) => {
+        console.error("Preload failed:", err);
+      });
+    }
+  }, []);
 
   // Initialize PayPal buttons
   const initializePayPal = async () => {
