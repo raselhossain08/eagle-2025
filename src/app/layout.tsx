@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -26,7 +27,9 @@ export default function RootLayout({
       <body suppressHydrationWarning={true}>
         <AuthProvider>
           <AnalyticsProvider>
-            <AnalyticsTracker />
+            <Suspense fallback={null}>
+              <AnalyticsTracker />
+            </Suspense>
             {children}
             <Toaster />
           </AnalyticsProvider>
