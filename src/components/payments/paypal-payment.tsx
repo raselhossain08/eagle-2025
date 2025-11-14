@@ -53,7 +53,6 @@ export function PayPalPayment({
   const [paymentStatus, setPaymentStatus] = useState<
     "idle" | "processing" | "success" | "error"
   >("idle");
-  const initializationTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Check if PayPal SDK is already loaded
   const isPayPalLoaded = () => {
@@ -411,27 +410,29 @@ export function PayPalPayment({
       try {
         // Load PayPal SDK if not already loaded
         if (!isPayPalLoaded()) {
+          console.log("📥 Loading PayPal SDK...");
           await loadPayPalScript();
         }
 
-        // Wait for DOM to be ready
-        if (initializationTimeoutRef.current) {
-          clearTimeout(initializationTimeoutRef.current);
-        }
-
-        initializationTimeoutRef.current = setTimeout(() => {
-          if (paypalRef.current) {
-            initializePayPal().catch((error) => {
-              console.error("❌ PayPal initialization failed:", error);
+        // Use requestAnimationFrame to ensure DOM is ready
+        requestAnimationFrame(() => {
+          requestAnimationFrame(() => {
+            if (paypalRef.current) {
+              console.log("✅ PayPal container ready, initializing buttons...");
+              initializePayPal().catch((error) => {
+                console.error("❌ PayPal initialization failed:", error);
+                setIsLoading(false);
+                onPaymentError(error.message || "PayPal initialization failed");
+              });
+            } else {
+              console.error(
+                "❌ PayPal container ref not available after DOM ready"
+              );
               setIsLoading(false);
-              onPaymentError(error.message || "PayPal initialization failed");
-            });
-          } else {
-            console.error("❌ PayPal container ref not available");
-            setIsLoading(false);
-            onPaymentError("PayPal container not ready");
-          }
-        }, 100);
+              onPaymentError("PayPal container not ready");
+            }
+          });
+        });
       } catch (error: any) {
         console.error("❌ PayPal setup failed:", error);
         setIsLoading(false);
@@ -444,14 +445,11 @@ export function PayPalPayment({
     // Cleanup
     return () => {
       console.log("🧹 PayPal component unmounting");
-      if (initializationTimeoutRef.current) {
-        clearTimeout(initializationTimeoutRef.current);
-      }
       setIsLoading(false);
       setPaymentStatus("idle");
       setIsInitializing(false);
     };
-  }, [contractId]); // Only re-run when contractId changes
+  }, [contractId, amount]); // Re-run when contractId or amount changes
 
   if (isLoading) {
     return (
