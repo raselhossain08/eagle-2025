@@ -501,27 +501,6 @@ export function PayPalPayment({
               <p>This may take a few seconds.</p>
               <p>If loading continues, try the retry button.</p>
             </div>
-            <div className="flex space-x-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleRetry}
-                className="text-xs"
-              >
-                Retry
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => {
-                  setIsLoading(false);
-                  onPaymentError("Loading cancelled by user");
-                }}
-                className="text-xs"
-              >
-                Cancel
-              </Button>
-            </div>
           </div>
           {/* Hidden container for ref attachment */}
           {paypalContainerDiv}
