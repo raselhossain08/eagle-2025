@@ -1110,6 +1110,7 @@ export default function CheckoutContent() {
       // Create transaction record with captured values
       try {
         const transactionData: TransactionData = {
+          userId: user?.id || undefined, // ✅ Add user ID if authenticated
           amount: finalPaymentAmount, // Use captured amount
           currency: "USD",
           type: "charge",
@@ -1124,6 +1125,8 @@ export default function CheckoutContent() {
             plan: cartItems[0]?.name || "None",
             subscriptionType: cartItems[0]?.type || "one-time",
             paymentMethod: paymentData.paymentProvider,
+            customerName: formData.contactInfo.name || mockUser.name, // ✅ Add customer name
+            customerEmail: formData.contactInfo.email || mockUser.email, // ✅ Add customer email
             items: cartItems.map((item) => {
               // Parse the price correctly - handle both string and number formats
               let itemPrice = 0;
