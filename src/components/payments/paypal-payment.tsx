@@ -46,7 +46,7 @@ export function PayPalPayment({
   discountCode,
   discountAmount,
 }: PayPalPaymentProps) {
-  const paypalRef = useRef<HTMLDivElement>(null);
+  const [paypalContainer, setPaypalContainer] = useState<HTMLDivElement | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isInitializing, setIsInitializing] = useState(false);
   const [scriptLoaded, setScriptLoaded] = useState(false);
@@ -54,6 +54,14 @@ export function PayPalPayment({
     "idle" | "processing" | "success" | "error"
   >("idle");
   const [isMounted, setIsMounted] = useState(false);
+
+  // Ref callback to capture the container element when it mounts
+  const paypalRef = (node: HTMLDivElement | null) => {
+    if (node !== null) {
+      console.log("✅ PayPal container attached to DOM");
+      setPaypalContainer(node);
+    }
+  };
 
   // Ensure component is mounted (client-side only)
   useEffect(() => {
@@ -172,7 +180,7 @@ export function PayPalPayment({
       throw new Error("PayPal SDK not available");
     }
 
-    if (!paypalRef.current) {
+    if (!paypalContainer) {
       console.error("PayPal container not ready");
       throw new Error("PayPal container not ready");
     }
@@ -187,8 +195,8 @@ export function PayPalPayment({
 
     try {
       // Clear any existing buttons
-      if (paypalRef.current.innerHTML) {
-        paypalRef.current.innerHTML = "";
+      if (paypalContainer.innerHTML) {
+        paypalContainer.innerHTML = "";
       }
 
       const paypalButtons = window.paypal.Buttons({
@@ -338,7 +346,11 @@ export function PayPalPayment({
         },
       });
 
-      await paypalButtons.render(paypalRef.current);
+      if (!paypalContainer) {
+        throw new Error("PayPal container not available for rendering");
+      }
+
+      await paypalButtons.render(paypalContainer);
       console.log("PayPal buttons rendered successfully");
       setIsLoading(false);
     } catch (error: any) {
@@ -357,8 +369,8 @@ export function PayPalPayment({
     setPaymentStatus("idle");
 
     // Clear existing buttons
-    if (paypalRef.current) {
-      paypalRef.current.innerHTML = "";
+    if (paypalContainer) {
+      paypalContainer.innerHTML = "";
     }
 
     try {
@@ -381,10 +393,14 @@ export function PayPalPayment({
     }
   };
 
-  // Main effect
+  // Main effect - triggers when container is available
   useEffect(() => {
-    // Wait for client-side mounting
-    if (!isMounted) {
+    // Wait for client-side mounting and container to be attached
+    if (!isMounted || !paypalContainer) {
+      console.log("⏳ Waiting for setup:", {
+        isMounted,
+        hasContainer: !!paypalContainer,
+      });
       return;
     }
 
@@ -401,7 +417,7 @@ export function PayPalPayment({
     console.log("  - API URL:", PAYPAL_API);
     console.log("  - Backend API URL:", API_URL);
     console.log("  - isMounted:", isMounted);
-    console.log("  - paypalRef.current:", !!paypalRef.current);
+    console.log("  - Container available: ✅ Yes");
 
     if (!contractId) {
       console.error("❌ Contract ID not provided");
@@ -427,19 +443,6 @@ export function PayPalPayment({
           await loadPayPalScript();
         }
 
-        // Add a small delay to ensure ref is attached
-        await new Promise((resolve) => setTimeout(resolve, 100));
-
-        // Check if ref is available
-        if (!paypalRef.current) {
-          console.error(
-            "❌ PayPal container ref still not available after delay"
-          );
-          setIsLoading(false);
-          onPaymentError("PayPal container not ready");
-          return;
-        }
-
         console.log("✅ PayPal container ready, initializing buttons...");
         await initializePayPal();
       } catch (error: any) {
@@ -458,7 +461,7 @@ export function PayPalPayment({
       setPaymentStatus("idle");
       setIsInitializing(false);
     };
-  }, [contractId, amount, isMounted]); // Re-run when contractId, amount, or isMounted changes
+  }, [contractId, amount, isMounted, paypalContainer]); // Re-run when contractId, amount, or isMounted changes
 
   if (isLoading) {
     return (
