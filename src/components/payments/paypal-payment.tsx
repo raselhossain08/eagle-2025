@@ -46,7 +46,9 @@ export function PayPalPayment({
   discountCode,
   discountAmount,
 }: PayPalPaymentProps) {
-  const [paypalContainer, setPaypalContainer] = useState<HTMLDivElement | null>(null);
+  const [paypalContainer, setPaypalContainer] = useState<HTMLDivElement | null>(
+    null
+  );
   const [isLoading, setIsLoading] = useState(true);
   const [isInitializing, setIsInitializing] = useState(false);
   const [scriptLoaded, setScriptLoaded] = useState(false);
@@ -63,9 +65,17 @@ export function PayPalPayment({
     }
   };
 
-  // Ensure component is mounted (client-side only)
+  // Ensure component is mounted (client-side only) and preload SDK
   useEffect(() => {
     setIsMounted(true);
+
+    // Start loading PayPal SDK immediately to reduce wait time
+    if (typeof window !== "undefined" && !isPayPalLoaded()) {
+      console.log("🚀 Preloading PayPal SDK...");
+      loadPayPalScript().catch((err) => {
+        console.error("Preload failed:", err);
+      });
+    }
   }, []);
 
   // Check if PayPal SDK is already loaded
@@ -378,14 +388,8 @@ export function PayPalPayment({
         await loadPayPalScript();
       }
 
-      // Wait a bit for DOM to be ready
-      setTimeout(() => {
-        initializePayPal().catch((error) => {
-          console.error("Retry failed:", error);
-          setIsLoading(false);
-          onPaymentError(error.message || "Retry failed");
-        });
-      }, 500);
+      // Initialize immediately
+      await initializePayPal();
     } catch (error: any) {
       console.error("Retry script loading failed:", error);
       setIsLoading(false);
