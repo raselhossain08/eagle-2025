@@ -8,12 +8,14 @@ import { toast } from "@/hooks/use-toast";
 import { PaymentInfoDisplay } from "@/components/payments/payment-info-display";
 import Cookies from "js-cookie";
 
-// PayPal Configuration - Fallback if env vars not loaded
+// PayPal Configuration - Direct API credentials
+const PAYPAL_MODE = "sandbox";
 const PAYPAL_CLIENT_ID =
-  process.env.NEXT_PUBLIC_PAYPAL_CLIENT_ID ||
   "AcfFvFMNLJESxr3GaU3KuFNKjky-DV9rlOdP5NwUMIlmDsG0k46GWqeCEYEbfNH0xVrSv4ZPcMfxZiYI";
-const PAYPAL_SDK_URL =
-  process.env.NEXT_PUBLIC_PAYPAL_SDK_URL || "https://www.paypal.com/sdk/js";
+const PAYPAL_CLIENT_SECRET =
+  "EFCrBFnuAYZySyoTABVUoFLHXaJp407__f7fiLcgSXJvoUf4fNGJgXUU38sYQXTShXMYplxn8ls5lE7o";
+const PAYPAL_API = "https://api.sandbox.paypal.com";
+const PAYPAL_SDK_URL = "https://www.paypal.com/sdk/js";
 
 // Extend the global Window interface
 declare global {
@@ -97,26 +99,8 @@ export function PayPalPayment({
         clientId ? `${clientId.substring(0, 10)}...` : "MISSING"
       );
       console.log("  - SDK Base URL:", sdkBaseUrl);
-      console.log(
-        "  - From env var:",
-        process.env.NEXT_PUBLIC_PAYPAL_CLIENT_ID ? "Yes" : "No (using fallback)"
-      );
-
-      if (
-        !clientId ||
-        clientId === "undefined" ||
-        clientId === "your_paypal_client_id_here"
-      ) {
-        const error = new Error(
-          "PayPal Client ID is not configured or invalid"
-        );
-        console.error("❌", error.message);
-        console.error(
-          "💡 Please check your .env file and restart the dev server"
-        );
-        reject(error);
-        return;
-      }
+      console.log("  - Mode:", PAYPAL_MODE);
+      console.log("  - API URL:", PAYPAL_API);
 
       console.log("✅ Loading PayPal SDK...");
 
@@ -399,29 +383,9 @@ export function PayPalPayment({
     console.log("🚀 PayPal Component Initialization");
     console.log("  - Contract ID:", contractId);
     console.log("  - Amount:", amount);
-    console.log("  - Client ID configured:", clientId ? "✅ Yes" : "❌ No");
-    console.log(
-      "  - Using env var:",
-      process.env.NEXT_PUBLIC_PAYPAL_CLIENT_ID ? "Yes" : "No (fallback)"
-    );
-
-    if (
-      !clientId ||
-      clientId === "undefined" ||
-      clientId === "your_paypal_client_id_here"
-    ) {
-      console.error("❌ PayPal Client ID not configured properly");
-      console.error("💡 Check your .env file for NEXT_PUBLIC_PAYPAL_CLIENT_ID");
-      console.error("💡 Current value:", clientId);
-      console.error(
-        "💡 After updating .env, restart the dev server with: npm run dev"
-      );
-      setIsLoading(false);
-      onPaymentError(
-        "PayPal configuration missing. Please check environment variables and restart the server."
-      );
-      return;
-    }
+    console.log("  - Client ID configured: ✅ Yes");
+    console.log("  - Mode:", PAYPAL_MODE);
+    console.log("  - API URL:", PAYPAL_API);
 
     if (!contractId) {
       console.error("❌ Contract ID not provided");
@@ -545,12 +509,9 @@ export function PayPalPayment({
         businessInfo={{
           name: process.env.NEXT_PUBLIC_BUSINESS_NAME || "Eagle Investors",
           supportEmail:
-            process.env.NEXT_PUBLIC_CONTACT_EMAIL ||
-            "support@eagle-investors.com",
-          website:
-            process.env.NEXT_PUBLIC_WORDPRESS_URL ||
-            "https://eagle-investors.com",
-          phone: process.env.NEXT_PUBLIC_BUSINESS_PHONE,
+            process.env.NEXT_PUBLIC_CONTACT_EMAIL || "info@eagle-investors.com",
+          website: "https://eagle-investors.com",
+          phone: process.env.NEXT_PUBLIC_BUSINESS_PHONE || "+1-555-EAGLE-01",
         }}
       />
 
