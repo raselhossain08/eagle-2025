@@ -444,6 +444,16 @@ function SubscriptionContractModal({
   };
 
   const handlePaymentSuccess = async (data: any) => {
+    console.log("💳 Subscription payment success", {
+      packageType,
+      subscriptionType,
+      originalPrice: getPackagePrice(),
+      discountAmount: discountInfo ? getDiscountAmount() : 0,
+      finalPrice: discountInfo ? calculateFinalPrice() : getPackagePrice(),
+      discountCode: discountInfo ? discountCode : null,
+      paymentData: data,
+    });
+
     setCurrentStep(5);
 
     try {

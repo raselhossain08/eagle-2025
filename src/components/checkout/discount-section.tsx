@@ -1,20 +1,20 @@
 "use client";
 
-import React from 'react';
+import React from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { 
-  Tag, 
-  X, 
-  Loader2, 
+import {
+  Tag,
+  X,
+  Loader2,
   Check,
   AlertCircle,
   Gift,
-  Percent
+  Percent,
 } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import useDiscount from "@/hooks/use-discount";
@@ -23,8 +23,13 @@ import { discountService } from "@/lib/services/api/discount";
 interface DiscountSectionProps {
   orderAmount: number;
   quantity?: number;
-  onDiscountApplied?: (discountAmount: number, finalAmount: number) => void;
+  onDiscountApplied?: (
+    discountAmount: number,
+    finalAmount: number,
+    discountCode?: string
+  ) => void;
   onDiscountRemoved?: () => void;
+  initialDiscountCode?: string;
   className?: string;
 }
 
@@ -33,7 +38,8 @@ export function DiscountSection({
   quantity = 1,
   onDiscountApplied,
   onDiscountRemoved,
-  className = ""
+  initialDiscountCode,
+  className = "",
 }: DiscountSectionProps) {
   const {
     discountCode,
@@ -46,18 +52,60 @@ export function DiscountSection({
     hasValidDiscount,
     discountAmount,
     finalAmount,
-    savingsPercentage
+    savingsPercentage,
   } = useDiscount(orderAmount);
 
   // Get authentication status and available methods
   const authStatus = discountService.getUserAuthStatus();
   const availableMethods = discountService.getAvailableMethods();
 
+  // Auto-apply saved discount code on mount
+  React.useEffect(() => {
+    if (
+      initialDiscountCode &&
+      !hasValidDiscount &&
+      initialDiscountCode.trim()
+    ) {
+      console.log("🔄 Auto-applying saved discount code:", initialDiscountCode);
+      setDiscountCode(initialDiscountCode);
+      // Small delay to ensure state is set
+      setTimeout(async () => {
+        const result = await verifyDiscount(orderAmount, quantity);
+        if (result) {
+          console.log("✅ Saved discount auto-applied successfully");
+          const discountAmount = result.calculation.discountAmount;
+          const finalAmount = result.calculation.finalAmount;
+          const discountCode = result.discount.code;
+
+          console.log("📞 Calling parent callback with:", {
+            discountAmount,
+            finalAmount,
+            discountCode,
+          });
+          onDiscountApplied?.(discountAmount, finalAmount, discountCode);
+        }
+      }, 100);
+    }
+  }, [initialDiscountCode]);
+
   const handleApplyDiscount = async () => {
-    const success = await verifyDiscount(orderAmount, quantity);
-    
-    if (success && appliedDiscount) {
-      onDiscountApplied?.(discountAmount, finalAmount);
+    console.log("🎯 handleApplyDiscount called");
+    const result = await verifyDiscount(orderAmount, quantity);
+    console.log("✅ Verification result:", result);
+
+    if (result) {
+      const discountAmount = result.calculation.discountAmount;
+      const finalAmount = result.calculation.finalAmount;
+      const discountCode = result.discount.code;
+
+      console.log("📞 Calling parent onDiscountApplied callback with:", {
+        discountAmount,
+        finalAmount,
+        discountCode,
+      });
+      onDiscountApplied?.(discountAmount, finalAmount, discountCode);
+    } else {
+      console.warn("⚠️ Discount verification failed");
     }
   };
 
@@ -67,7 +115,7 @@ export function DiscountSection({
   };
 
   const handleInputKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && discountCode.trim() && !isVerifying) {
+    if (e.key === "Enter" && discountCode.trim() && !isVerifying) {
       handleApplyDiscount();
     }
   };
@@ -84,7 +132,7 @@ export function DiscountSection({
                 Have a discount code?
               </Label>
             </div>
-            
+
             {/* Authentication Status Indicator */}
             <div className="flex items-center gap-2">
               {authStatus.isAuthenticated ? (
@@ -118,8 +166,8 @@ export function DiscountSection({
                   disabled={!discountCode.trim() || isVerifying}
                   className="bg-purple-600 hover:bg-purple-700 text-white"
                   title={
-                    authStatus.isAuthenticated 
-                      ? "Verify with authenticated benefits" 
+                    authStatus.isAuthenticated
+                      ? "Verify with authenticated benefits"
                       : "Verify as guest (limited features)"
                   }
                 >
@@ -160,7 +208,7 @@ export function DiscountSection({
                       </p>
                     </div>
                   </div>
-                  
+
                   <Button
                     variant="ghost"
                     size="sm"
@@ -176,26 +224,27 @@ export function DiscountSection({
                   <div className="flex items-center justify-between text-sm">
                     <span className="text-slate-300">Discount Type:</span>
                     <div className="flex items-center gap-1">
-                      {appliedDiscount?.discount.type === 'percentage' ? (
+                      {appliedDiscount?.discount.type === "percentage" ? (
                         <Percent className="w-3 h-3 text-green-400" />
                       ) : (
                         <Gift className="w-3 h-3 text-green-400" />
                       )}
                       <span className="text-white capitalize">
-                        {appliedDiscount?.discount.type.replace('_', ' ')}
+                        {appliedDiscount?.discount.type.replace("_", " ")}
                       </span>
-                      {appliedDiscount?.discount.type === 'percentage' && (
+                      {appliedDiscount?.discount.type === "percentage" && (
                         <span className="text-green-400 font-medium">
                           {appliedDiscount.discount.value}%
                         </span>
                       )}
                     </div>
                   </div>
-                  
+
                   <div className="flex items-center justify-between text-sm mt-1">
                     <span className="text-slate-300">Your Savings:</span>
                     <span className="text-green-400 font-medium">
-                      ${discountAmount.toLocaleString()} ({savingsPercentage}% off)
+                      ${discountAmount.toLocaleString()} ({savingsPercentage}%
+                      off)
                     </span>
                   </div>
 
@@ -226,10 +275,16 @@ export function DiscountSection({
               <Alert className="bg-blue-500/10 border-blue-500/30">
                 <AlertCircle className="h-4 w-4 text-blue-400" />
                 <AlertDescription className="text-blue-300 text-sm">
-                  <strong>Guest Mode:</strong> You can verify public discount codes. 
-                  <a href="/login" className="text-blue-400 hover:text-blue-300 underline ml-1">
+                  <strong>Guest Mode:</strong> You can verify public discount
+                  codes.
+                  <a
+                    href="/login"
+                    className="text-blue-400 hover:text-blue-300 underline ml-1"
+                  >
                     Log in
-                  </a> for member-exclusive discounts and to apply codes to your account.
+                  </a>{" "}
+                  for member-exclusive discounts and to apply codes to your
+                  account.
                 </AlertDescription>
               </Alert>
             )}
@@ -244,9 +299,11 @@ export function DiscountSection({
             <div className="space-y-2">
               <div className="flex justify-between text-sm">
                 <span className="text-slate-300">Subtotal:</span>
-                <span className="text-white">${orderAmount.toLocaleString()}</span>
+                <span className="text-white">
+                  ${orderAmount.toLocaleString()}
+                </span>
               </div>
-              
+
               <div className="flex justify-between text-sm">
                 <span className="text-slate-300">
                   Discount ({appliedDiscount?.discount.code}):
@@ -255,9 +312,9 @@ export function DiscountSection({
                   -${discountAmount.toLocaleString()}
                 </span>
               </div>
-              
+
               <Separator className="bg-slate-600" />
-              
+
               <div className="flex justify-between font-semibold">
                 <span className="text-white">Total:</span>
                 <div className="text-right">

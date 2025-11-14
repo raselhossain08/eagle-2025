@@ -12,10 +12,10 @@ interface UseDiscountReturn {
 
   // Actions
   setDiscountCode: (code: string) => void;
-  verifyDiscount: (orderAmount?: number, quantity?: number) => Promise<boolean>;
+  verifyDiscount: (orderAmount?: number, quantity?: number) => Promise<DiscountVerificationResponse | null>;
   clearDiscount: () => void;
   applyDiscount: (orderId?: string, originalAmount?: number) => Promise<boolean>;
-  
+
   // Calculated values
   hasValidDiscount: boolean;
   discountAmount: number;
@@ -38,12 +38,12 @@ export const useDiscount = (initialOrderAmount = 0): UseDiscountReturn => {
    */
   const setDiscountCode = useCallback((code: string) => {
     setDiscountCodeState(code.toUpperCase().trim());
-    
+
     // Clear previous discount if code changes
     if (appliedDiscount && appliedDiscount.discount.code !== code.toUpperCase().trim()) {
       setAppliedDiscount(null);
     }
-    
+
     // Clear error when user starts typing
     if (error) {
       setError(null);
@@ -52,14 +52,15 @@ export const useDiscount = (initialOrderAmount = 0): UseDiscountReturn => {
 
   /**
    * Verify discount code without applying it (uses smart verification)
+   * Returns the verification result object on success, or null on failure
    */
   const verifyDiscount = useCallback(async (
     orderAmount: number = initialOrderAmount,
     quantity: number = 1
-  ): Promise<boolean> => {
+  ): Promise<DiscountVerificationResponse | null> => {
     if (!discountCode.trim()) {
       setError('Please enter a discount code');
-      return false;
+      return null;
     }
 
     setIsVerifying(true);
@@ -74,38 +75,36 @@ export const useDiscount = (initialOrderAmount = 0): UseDiscountReturn => {
 
       // Use smart verification method that chooses appropriate endpoint based on auth status
       const result = await discountService.smartVerifyDiscount(verificationData);
-      
+
       setAppliedDiscount(result);
-      
+
       // Get auth status for enhanced messaging
       const authStatus = discountService.getUserAuthStatus();
-      
+
       // Show success message with auth-aware information
       toast({
         title: "Discount Applied!",
-        description: `${result.discount.name} - Save ${discountService.formatCurrency(result.calculation.savings)}${
-          authStatus.isAuthenticated ? ' (Authenticated user)' : ' (Guest)'
-        }`,
+        description: `${result.discount.name} - Save ${discountService.formatCurrency(result.calculation.savings)}${authStatus.isAuthenticated ? ' (Authenticated user)' : ' (Guest)'
+          }`,
         variant: "default",
       });
 
-      return true;
+      return result;
     } catch (err: any) {
       const errorMessage = err.message || 'Failed to verify discount code';
       setError(errorMessage);
       setAppliedDiscount(null);
-      
+
       // Show error toast with auth-aware information
       const authStatus = discountService.getUserAuthStatus();
       toast({
         title: "Invalid Discount Code",
-        description: `${errorMessage}${
-          !authStatus.isAuthenticated ? '. Log in for additional discount options.' : ''
-        }`,
+        description: `${errorMessage}${!authStatus.isAuthenticated ? '. Log in for additional discount options.' : ''
+          }`,
         variant: "destructive",
       });
 
-      return false;
+      return null;
     } finally {
       setIsVerifying(false);
     }
@@ -135,7 +134,7 @@ export const useDiscount = (initialOrderAmount = 0): UseDiscountReturn => {
       };
 
       await discountService.applyDiscount(applyData);
-      
+
       toast({
         title: "Discount Applied Successfully!",
         description: `Your order total has been updated with the ${appliedDiscount.discount.name} discount`,
@@ -146,7 +145,7 @@ export const useDiscount = (initialOrderAmount = 0): UseDiscountReturn => {
     } catch (err: any) {
       const errorMessage = err.message || 'Failed to apply discount';
       setError(errorMessage);
-      
+
       toast({
         title: "Failed to Apply Discount",
         description: errorMessage,
@@ -166,7 +165,7 @@ export const useDiscount = (initialOrderAmount = 0): UseDiscountReturn => {
     setDiscountCode('');
     setAppliedDiscount(null);
     setError(null);
-    
+
     toast({
       title: "Discount Removed",
       description: "The discount has been removed from your order",

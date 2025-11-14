@@ -8,6 +8,13 @@ import { toast } from "@/hooks/use-toast";
 import { PaymentInfoDisplay } from "@/components/payments/payment-info-display";
 import Cookies from "js-cookie";
 
+// PayPal Configuration - Fallback if env vars not loaded
+const PAYPAL_CLIENT_ID =
+  process.env.NEXT_PUBLIC_PAYPAL_CLIENT_ID ||
+  "AcfFvFMNLJESxr3GaU3KuFNKjky-DV9rlOdP5NwUMIlmDsG0k46GWqeCEYEbfNH0xVrSv4ZPcMfxZiYI";
+const PAYPAL_SDK_URL =
+  process.env.NEXT_PUBLIC_PAYPAL_SDK_URL || "https://www.paypal.com/sdk/js";
+
 // Extend the global Window interface
 declare global {
   interface Window {
@@ -73,50 +80,93 @@ export function PayPalPayment({
           setScriptLoaded(true);
           resolve();
         });
-        existingScript.addEventListener("error", () => {
+        existingScript.addEventListener("error", (error) => {
+          console.error("Existing PayPal script failed:", error);
           reject(new Error("PayPal script failed to load"));
         });
         return;
       }
 
-      console.log("Loading PayPal SDK...");
+      // Validate environment variables - use constants with fallback
+      const clientId = PAYPAL_CLIENT_ID;
+      const sdkBaseUrl = PAYPAL_SDK_URL;
+
+      console.log("🔧 PayPal SDK Configuration:");
+      console.log(
+        "  - Client ID:",
+        clientId ? `${clientId.substring(0, 10)}...` : "MISSING"
+      );
+      console.log("  - SDK Base URL:", sdkBaseUrl);
+      console.log(
+        "  - From env var:",
+        process.env.NEXT_PUBLIC_PAYPAL_CLIENT_ID ? "Yes" : "No (using fallback)"
+      );
+
+      if (
+        !clientId ||
+        clientId === "undefined" ||
+        clientId === "your_paypal_client_id_here"
+      ) {
+        const error = new Error(
+          "PayPal Client ID is not configured or invalid"
+        );
+        console.error("❌", error.message);
+        console.error(
+          "💡 Please check your .env file and restart the dev server"
+        );
+        reject(error);
+        return;
+      }
+
+      console.log("✅ Loading PayPal SDK...");
 
       // Add preconnect for faster loading
       const preconnect = document.createElement("link");
       preconnect.rel = "preconnect";
-      preconnect.href =
-        process.env.NEXT_PUBLIC_PAYPAL_SDK_URL?.replace("/sdk/js", "") ||
-        "https://www.paypal.com";
+      preconnect.href = sdkBaseUrl.replace("/sdk/js", "");
       document.head.appendChild(preconnect);
 
       const script = document.createElement("script");
-      script.src = `${
-        process.env.NEXT_PUBLIC_PAYPAL_SDK_URL ||
-        "https://www.paypal.com/sdk/js"
-      }?client-id=${
-        process.env.NEXT_PUBLIC_PAYPAL_CLIENT_ID
-      }&currency=USD&intent=capture&disable-funding=credit,card`;
+      const sdkUrl = `${sdkBaseUrl}?client-id=${clientId}&currency=USD&intent=capture&disable-funding=credit,card`;
+
+      console.log(
+        "📡 Loading from:",
+        sdkUrl.replace(clientId, `${clientId.substring(0, 10)}...`)
+      );
+
+      script.src = sdkUrl;
       script.async = true;
+      script.setAttribute("data-sdk-integration-source", "button-factory");
 
       const loadTimeout = setTimeout(() => {
-        console.error("PayPal SDK loading timeout");
+        console.error("⏱️ PayPal SDK loading timeout (15s exceeded)");
         reject(new Error("PayPal SDK loading timeout"));
       }, 15000);
 
       script.onload = () => {
-        console.log("PayPal SDK loaded successfully");
+        console.log("✅ PayPal SDK loaded successfully");
         clearTimeout(loadTimeout);
         setScriptLoaded(true);
         resolve();
       };
 
       script.onerror = (error) => {
-        console.error("PayPal SDK script error:", error);
+        console.error("❌ PayPal SDK script error:", error);
+        console.error("🔍 Possible causes:");
+        console.error("  1. Invalid PayPal Client ID");
+        console.error("  2. Network connectivity issues");
+        console.error("  3. PayPal service is down");
+        console.error("  4. CORS or browser security blocking the script");
+        console.error(
+          "🔗 Script URL:",
+          sdkUrl.replace(clientId, `${clientId.substring(0, 10)}...`)
+        );
         clearTimeout(loadTimeout);
         reject(new Error("Failed to load PayPal SDK"));
       };
 
       document.head.appendChild(script);
+      console.log("📝 PayPal script element added to document head");
     });
   };
 
@@ -182,6 +232,9 @@ export function PayPalPayment({
                 body: JSON.stringify({
                   contractId,
                   subscriptionType,
+                  amount,
+                  ...(discountCode && { discountCode }),
+                  ...(discountAmount && { discountAmount }),
                 }),
               }
             );
@@ -230,6 +283,9 @@ export function PayPalPayment({
                 body: JSON.stringify({
                   contractId,
                   subscriptionType,
+                  amount,
+                  ...(discountCode && { discountCode }),
+                  ...(discountAmount && { discountAmount }),
                 }),
               }
             );
@@ -337,22 +393,44 @@ export function PayPalPayment({
 
   // Main effect
   useEffect(() => {
-    // Validation
-    if (!process.env.NEXT_PUBLIC_PAYPAL_CLIENT_ID) {
-      console.error("PayPal Client ID not configured");
+    // Validation - use constant with fallback
+    const clientId = PAYPAL_CLIENT_ID;
+
+    console.log("🚀 PayPal Component Initialization");
+    console.log("  - Contract ID:", contractId);
+    console.log("  - Amount:", amount);
+    console.log("  - Client ID configured:", clientId ? "✅ Yes" : "❌ No");
+    console.log(
+      "  - Using env var:",
+      process.env.NEXT_PUBLIC_PAYPAL_CLIENT_ID ? "Yes" : "No (fallback)"
+    );
+
+    if (
+      !clientId ||
+      clientId === "undefined" ||
+      clientId === "your_paypal_client_id_here"
+    ) {
+      console.error("❌ PayPal Client ID not configured properly");
+      console.error("💡 Check your .env file for NEXT_PUBLIC_PAYPAL_CLIENT_ID");
+      console.error("💡 Current value:", clientId);
+      console.error(
+        "💡 After updating .env, restart the dev server with: npm run dev"
+      );
       setIsLoading(false);
-      onPaymentError("PayPal configuration missing");
+      onPaymentError(
+        "PayPal configuration missing. Please check environment variables and restart the server."
+      );
       return;
     }
 
     if (!contractId) {
-      console.error("Contract ID not provided");
+      console.error("❌ Contract ID not provided");
       setIsLoading(false);
       onPaymentError("Contract ID is required");
       return;
     }
 
-    console.log("Initializing PayPal component for contract:", contractId);
+    console.log("✅ All validations passed, initializing PayPal...");
 
     const initPayPal = async () => {
       try {
@@ -369,18 +447,18 @@ export function PayPalPayment({
         initializationTimeoutRef.current = setTimeout(() => {
           if (paypalRef.current) {
             initializePayPal().catch((error) => {
-              console.error("PayPal initialization failed:", error);
+              console.error("❌ PayPal initialization failed:", error);
               setIsLoading(false);
               onPaymentError(error.message || "PayPal initialization failed");
             });
           } else {
-            console.error("PayPal container ref not available");
+            console.error("❌ PayPal container ref not available");
             setIsLoading(false);
             onPaymentError("PayPal container not ready");
           }
         }, 100);
       } catch (error: any) {
-        console.error("PayPal setup failed:", error);
+        console.error("❌ PayPal setup failed:", error);
         setIsLoading(false);
         onPaymentError(error.message || "PayPal setup failed");
       }
@@ -390,7 +468,7 @@ export function PayPalPayment({
 
     // Cleanup
     return () => {
-      console.log("PayPal component unmounting");
+      console.log("🧹 PayPal component unmounting");
       if (initializationTimeoutRef.current) {
         clearTimeout(initializationTimeoutRef.current);
       }
@@ -442,6 +520,16 @@ export function PayPalPayment({
     );
   }
 
+  console.log("🔵 PayPal Component Props to PaymentInfoDisplay:", {
+    productName,
+    amount: parseFloat(amount) || 0,
+    discountCode,
+    discountAmount,
+    originalAmount: discountAmount
+      ? parseFloat(amount) + discountAmount
+      : undefined,
+  });
+
   return (
     <div className="space-y-6">
       {/* Payment Information Display */}
@@ -449,6 +537,11 @@ export function PayPalPayment({
         productName={productName}
         amount={parseFloat(amount) || 0}
         subscriptionType={subscriptionType}
+        discountCode={discountCode}
+        discountAmount={discountAmount}
+        originalAmount={
+          discountAmount ? parseFloat(amount) + discountAmount : undefined
+        }
         businessInfo={{
           name: process.env.NEXT_PUBLIC_BUSINESS_NAME || "Eagle Investors",
           supportEmail:

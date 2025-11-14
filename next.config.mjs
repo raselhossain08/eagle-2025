@@ -24,7 +24,7 @@ const nextConfig = {
   async rewrites() {
     const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
     const backendUrl = apiUrl.replace('/api', ''); // Remove /api to get base URL
-    
+
     return [
       {
         source: "/api/:path*",
