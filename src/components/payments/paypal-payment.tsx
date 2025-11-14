@@ -53,6 +53,12 @@ export function PayPalPayment({
   const [paymentStatus, setPaymentStatus] = useState<
     "idle" | "processing" | "success" | "error"
   >("idle");
+  const [isMounted, setIsMounted] = useState(false);
+
+  // Ensure component is mounted (client-side only)
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   // Check if PayPal SDK is already loaded
   const isPayPalLoaded = () => {
@@ -377,6 +383,11 @@ export function PayPalPayment({
 
   // Main effect
   useEffect(() => {
+    // Wait for client-side mounting
+    if (!isMounted) {
+      return;
+    }
+
     // Validation - use constant with fallback
     const clientId = PAYPAL_CLIENT_ID;
     const amountValue = parseFloat(amount);
@@ -389,6 +400,8 @@ export function PayPalPayment({
     console.log("  - Mode:", PAYPAL_MODE);
     console.log("  - API URL:", PAYPAL_API);
     console.log("  - Backend API URL:", API_URL);
+    console.log("  - isMounted:", isMounted);
+    console.log("  - paypalRef.current:", !!paypalRef.current);
 
     if (!contractId) {
       console.error("❌ Contract ID not provided");
@@ -414,25 +427,21 @@ export function PayPalPayment({
           await loadPayPalScript();
         }
 
-        // Use requestAnimationFrame to ensure DOM is ready
-        requestAnimationFrame(() => {
-          requestAnimationFrame(() => {
-            if (paypalRef.current) {
-              console.log("✅ PayPal container ready, initializing buttons...");
-              initializePayPal().catch((error) => {
-                console.error("❌ PayPal initialization failed:", error);
-                setIsLoading(false);
-                onPaymentError(error.message || "PayPal initialization failed");
-              });
-            } else {
-              console.error(
-                "❌ PayPal container ref not available after DOM ready"
-              );
-              setIsLoading(false);
-              onPaymentError("PayPal container not ready");
-            }
-          });
-        });
+        // Add a small delay to ensure ref is attached
+        await new Promise((resolve) => setTimeout(resolve, 100));
+
+        // Check if ref is available
+        if (!paypalRef.current) {
+          console.error(
+            "❌ PayPal container ref still not available after delay"
+          );
+          setIsLoading(false);
+          onPaymentError("PayPal container not ready");
+          return;
+        }
+
+        console.log("✅ PayPal container ready, initializing buttons...");
+        await initializePayPal();
       } catch (error: any) {
         console.error("❌ PayPal setup failed:", error);
         setIsLoading(false);
@@ -449,7 +458,7 @@ export function PayPalPayment({
       setPaymentStatus("idle");
       setIsInitializing(false);
     };
-  }, [contractId, amount]); // Re-run when contractId or amount changes
+  }, [contractId, amount, isMounted]); // Re-run when contractId, amount, or isMounted changes
 
   if (isLoading) {
     return (
