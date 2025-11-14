@@ -478,6 +478,15 @@ export function PayPalPayment({
     };
   }, [contractId, amount, isMounted, paypalContainer]); // Re-run when contractId, amount, or isMounted changes
 
+  // Render container div early (hidden) so ref attaches immediately
+  const paypalContainerDiv = (
+    <div
+      ref={paypalRef}
+      className="min-h-[50px] w-full"
+      style={{ minHeight: "50px", display: isLoading ? "none" : "block" }}
+    />
+  );
+
   if (isLoading) {
     return (
       <Card className="bg-brand-bg-light border-brand-border">
@@ -515,6 +524,8 @@ export function PayPalPayment({
               </Button>
             </div>
           </div>
+          {/* Hidden container for ref attachment */}
+          {paypalContainerDiv}
         </CardContent>
       </Card>
     );
@@ -600,11 +611,8 @@ export function PayPalPayment({
               <span>Secure payment powered by PayPal</span>
             </div>
 
-            <div
-              ref={paypalRef}
-              className="min-h-[50px] w-full"
-              style={{ minHeight: "50px" }}
-            />
+            {/* PayPal buttons container */}
+            {paypalContainerDiv}
 
             <div className="text-xs text-gray-500 text-center">
               Your payment is secured by PayPal's buyer protection program
