@@ -474,12 +474,18 @@ export default function CheckoutContent() {
     }, 0);
 
     // Return discounted total if discount is applied, otherwise return subtotal
-    const finalPrice = discountedTotal > 0 ? discountedTotal : subtotal;
+    // For 100% discount, discountedTotal will be 0, which should be returned
+    const finalPrice =
+      discountedTotal >= 0 && appliedDiscountAmount > 0
+        ? discountedTotal
+        : subtotal;
     console.log("💵 Final Price Calculation:", {
       subtotal,
       discountedTotal,
       finalPrice,
-      willUseDiscount: discountedTotal > 0,
+      appliedDiscountAmount,
+      willUseDiscount: appliedDiscountAmount > 0,
+      is100PercentDiscount: discountedTotal === 0 && appliedDiscountAmount > 0,
     });
     return finalPrice;
   };

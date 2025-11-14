@@ -8,14 +8,15 @@ import { toast } from "@/hooks/use-toast";
 import { PaymentInfoDisplay } from "@/components/payments/payment-info-display";
 import Cookies from "js-cookie";
 
-// PayPal Configuration - Direct API credentials
-const PAYPAL_MODE = "sandbox";
+// PayPal Configuration - Live Account Credentials
+const PAYPAL_MODE = "live";
 const PAYPAL_CLIENT_ID =
-  "AcfFvFMNLJESxr3GaU3KuFNKjky-DV9rlOdP5NwUMIlmDsG0k46GWqeCEYEbfNH0xVrSv4ZPcMfxZiYI";
+  "AWbwj0ColfRdhTER5lNkzUiOwmM6TJX3lAIqnZvtBfqO7zHAQC6_tZBtYYx21fH62d2JAm2mbIOAO6BO";
 const PAYPAL_CLIENT_SECRET =
-  "EFCrBFnuAYZySyoTABVUoFLHXaJp407__f7fiLcgSXJvoUf4fNGJgXUU38sYQXTShXMYplxn8ls5lE7o";
-const PAYPAL_API = "https://api.sandbox.paypal.com";
+  "EP5VgCo2Xd_T_dqYarcfbnK6KzrIFUT8GleLXwCY9VaARqR5GeavzjQpgRh-fZovlbMLPFX8fPWB-7ri";
+const PAYPAL_API = "https://api.paypal.com";
 const PAYPAL_SDK_URL = "https://www.paypal.com/sdk/js";
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "https://eagleinvest.us/api";
 
 // Extend the global Window interface
 declare global {
@@ -206,7 +207,7 @@ export function PayPalPayment({
             console.log("Creating PayPal order...");
 
             const response = await fetch(
-              `${process.env.NEXT_PUBLIC_API_URL}/paypal/contracts/create-order`,
+              `${API_URL}/paypal/contracts/create-order`,
               {
                 method: "POST",
                 headers: {
@@ -257,7 +258,7 @@ export function PayPalPayment({
             console.log("Capturing PayPal payment:", data.orderID);
 
             const response = await fetch(
-              `${process.env.NEXT_PUBLIC_API_URL}/paypal/contracts/capture-order/${data.orderID}`,
+              `${API_URL}/paypal/contracts/capture-order/${data.orderID}`,
               {
                 method: "POST",
                 headers: {
@@ -379,18 +380,28 @@ export function PayPalPayment({
   useEffect(() => {
     // Validation - use constant with fallback
     const clientId = PAYPAL_CLIENT_ID;
+    const amountValue = parseFloat(amount);
 
     console.log("🚀 PayPal Component Initialization");
     console.log("  - Contract ID:", contractId);
     console.log("  - Amount:", amount);
+    console.log("  - Amount (parsed):", amountValue);
     console.log("  - Client ID configured: ✅ Yes");
     console.log("  - Mode:", PAYPAL_MODE);
     console.log("  - API URL:", PAYPAL_API);
+    console.log("  - Backend API URL:", API_URL);
 
     if (!contractId) {
       console.error("❌ Contract ID not provided");
       setIsLoading(false);
       onPaymentError("Contract ID is required");
+      return;
+    }
+
+    if (isNaN(amountValue) || amountValue < 0) {
+      console.error("❌ Invalid amount:", amount);
+      setIsLoading(false);
+      onPaymentError("Invalid payment amount");
       return;
     }
 
