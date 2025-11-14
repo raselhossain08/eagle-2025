@@ -134,9 +134,9 @@ export function PayPalPayment({
       script.setAttribute("data-sdk-integration-source", "button-factory");
 
       const loadTimeout = setTimeout(() => {
-        console.error("⏱️ PayPal SDK loading timeout (15s exceeded)");
+        console.error("⏱️ PayPal SDK loading timeout (10s exceeded)");
         reject(new Error("PayPal SDK loading timeout"));
-      }, 15000);
+      }, 10000);
 
       script.onload = () => {
         console.log("✅ PayPal SDK loaded successfully");
@@ -440,6 +440,15 @@ export function PayPalPayment({
     console.log("✅ All validations passed, initializing PayPal...");
 
     const initPayPal = async () => {
+      // Add timeout for initialization
+      const initTimeout = setTimeout(() => {
+        console.error("❌ PayPal initialization timeout (20s exceeded)");
+        setIsLoading(false);
+        onPaymentError(
+          "PayPal initialization timed out. Please retry or contact support."
+        );
+      }, 20000);
+
       try {
         // Load PayPal SDK if not already loaded
         if (!isPayPalLoaded()) {
@@ -449,7 +458,9 @@ export function PayPalPayment({
 
         console.log("✅ PayPal container ready, initializing buttons...");
         await initializePayPal();
+        clearTimeout(initTimeout);
       } catch (error: any) {
+        clearTimeout(initTimeout);
         console.error("❌ PayPal setup failed:", error);
         setIsLoading(false);
         onPaymentError(error.message || "PayPal setup failed");
