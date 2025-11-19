@@ -227,7 +227,7 @@ export function PayPalPayment({
   const initializePayPal = async () => {
     if (isInitializing) {
       console.log("PayPal already initializing, skipping...");
-      return;
+      return null;
     }
 
     if (!isPayPalLoaded()) {
@@ -249,9 +249,17 @@ export function PayPalPayment({
     console.log("Initializing PayPal buttons for contract:", contractId);
 
     try {
-      // Clear any existing buttons
+      // Clear any existing buttons safely
       if (paypalContainer.innerHTML) {
         paypalContainer.innerHTML = "";
+      }
+
+      // Check if PayPal buttons are already rendered
+      if (paypalContainer.firstChild) {
+        console.log("⚠️ PayPal buttons already exist, skipping initialization");
+        setIsLoading(false);
+        setIsInitializing(false);
+        return null;
       }
 
       const paypalButtons = window.paypal.Buttons({
@@ -408,10 +416,12 @@ export function PayPalPayment({
       await paypalButtons.render(paypalContainer);
       console.log("PayPal buttons rendered successfully");
       setIsLoading(false);
+      return paypalButtons;
     } catch (error: any) {
       console.error("PayPal initialization error:", error);
       setIsLoading(false);
       onPaymentError(`Failed to initialize PayPal: ${error.message || error}`);
+      return null;
     } finally {
       setIsInitializing(false);
     }
@@ -488,14 +498,19 @@ export function PayPalPayment({
 
     console.log("✅ All validations passed, initializing PayPal...");
 
+    let buttonsInstance: any = null;
+    let isCleanedUp = false;
+
     const initPayPal = async () => {
       // Add timeout for initialization
       const initTimeout = setTimeout(() => {
-        console.error("❌ PayPal initialization timeout (20s exceeded)");
-        setIsLoading(false);
-        onPaymentError(
-          "PayPal initialization timed out. Please retry or contact support."
-        );
+        if (!isCleanedUp) {
+          console.error("❌ PayPal initialization timeout (20s exceeded)");
+          setIsLoading(false);
+          onPaymentError(
+            "PayPal initialization timed out. Please retry or contact support."
+          );
+        }
       }, 20000);
 
       try {
@@ -505,25 +520,44 @@ export function PayPalPayment({
           await loadPayPalScript();
         }
 
-        console.log("✅ PayPal container ready, initializing buttons...");
-        await initializePayPal();
-        clearTimeout(initTimeout);
+        if (!isCleanedUp) {
+          console.log("✅ PayPal container ready, initializing buttons...");
+          buttonsInstance = await initializePayPal();
+          clearTimeout(initTimeout);
+        }
       } catch (error: any) {
         clearTimeout(initTimeout);
-        console.error("❌ PayPal setup failed:", error);
-        setIsLoading(false);
-        onPaymentError(error.message || "PayPal setup failed");
+        if (!isCleanedUp) {
+          console.error("❌ PayPal setup failed:", error);
+          setIsLoading(false);
+          onPaymentError(error.message || "PayPal setup failed");
+        }
       }
     };
 
     initPayPal();
 
-    // Cleanup
+    // Cleanup function to prevent memory leaks and zoid errors
     return () => {
-      console.log("🧹 PayPal component unmounting");
+      console.log("🧹 PayPal component unmounting, cleaning up...");
+      isCleanedUp = true;
       setIsLoading(false);
       setPaymentStatus("idle");
       setIsInitializing(false);
+
+      // Cleanup PayPal buttons instance if it exists
+      if (buttonsInstance && typeof buttonsInstance.close === "function") {
+        try {
+          buttonsInstance.close();
+        } catch (e) {
+          console.log("PayPal buttons already closed");
+        }
+      }
+
+      // Clear container safely
+      if (paypalContainer && paypalContainer.innerHTML) {
+        paypalContainer.innerHTML = "";
+      }
     };
   }, [contractId, amount, isMounted, paypalContainer, paypalConfig]); // Re-run when config changes
 

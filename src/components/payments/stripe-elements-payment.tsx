@@ -75,13 +75,74 @@ function PaymentForm({
     setPaymentStatus("processing");
 
     try {
-      // Create payment intent
       const token = Cookies.get("token");
       console.log(
         "🔑 Stripe token status:",
         token ? "Available" : "Guest mode"
       );
 
+      const finalAmount = parseFloat(amount);
+      console.log("💰 Final amount to charge:", finalAmount);
+      console.log("🎟️ Discount code:", discountCode || "None");
+      console.log("💵 Discount amount:", discountAmount || 0);
+
+      // For $0 orders (100% discount), bypass Stripe and record free transaction
+      if (finalAmount === 0) {
+        console.log("🎁 Processing 100% discounted order - bypassing Stripe");
+
+        const confirmResponse = await fetch(
+          `${process.env.NEXT_PUBLIC_API_URL}/paypal/contracts/confirm-payment`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              ...(token && { Authorization: `Bearer ${token}` }),
+            },
+            body: JSON.stringify({
+              paymentIntentId: `free_${Date.now()}`, // Generate unique ID for free transaction
+              contractId,
+              discountCode,
+              discountAmount,
+              finalAmount: 0,
+              paymentMethod: "stripe",
+              isFreeOrder: true,
+            }),
+          }
+        );
+
+        const confirmData = await confirmResponse.json();
+        console.log("✅ Free order confirmation response:", confirmData);
+
+        if (!confirmResponse.ok) {
+          throw new Error(
+            confirmData.message || "Failed to process free order"
+          );
+        }
+
+        const paymentData = {
+          paymentMethod: "stripe",
+          contractId,
+          amount: "0.00",
+          transactionId: `free_${Date.now()}`,
+          contract: confirmData.contract,
+          isFreeOrder: true,
+          discountCode,
+          discountAmount,
+        };
+
+        setPaymentStatus("success");
+        console.log("🎉 Free order completed successfully!");
+
+        toast({
+          title: "Order Completed",
+          description: "Your free order has been processed successfully!",
+        });
+
+        onPaymentSuccess(paymentData);
+        return;
+      }
+
+      // For paid orders, create Stripe payment intent with discount info
       console.log("🔄 Creating Stripe payment intent...");
       console.log("Contract ID:", contractId);
       console.log("Subscription Type:", subscriptionType);
@@ -97,6 +158,9 @@ function PaymentForm({
           body: JSON.stringify({
             contractId,
             subscriptionType,
+            discountCode,
+            discountAmount,
+            finalAmount,
           }),
         }
       );
@@ -167,6 +231,9 @@ function PaymentForm({
           body: JSON.stringify({
             paymentIntentId,
             contractId,
+            discountCode,
+            discountAmount,
+            finalAmount: parseFloat(amount),
           }),
         }
       );
@@ -184,6 +251,8 @@ function PaymentForm({
         amount,
         transactionId: paymentIntent.id, // Use the actual payment intent ID from Stripe
         contract: confirmData.contract,
+        discountCode,
+        discountAmount,
       };
 
       setPaymentStatus("success");

@@ -74,13 +74,23 @@ export function DiscountSection({
         if (result) {
           console.log("✅ Saved discount auto-applied successfully");
           const discountAmount = result.calculation.discountAmount;
-          const finalAmount = result.calculation.finalAmount;
+          let finalAmount = result.calculation.finalAmount;
           const discountCode = result.discount.code;
+
+          // Fix: If discount amount equals or exceeds order amount, final should be 0
+          if (discountAmount >= orderAmount) {
+            console.warn(
+              "⚠️ Backend returned wrong finalAmount for 100% discount in auto-apply. Fixing it."
+            );
+            finalAmount = 0;
+          }
 
           console.log("📞 Calling parent callback with:", {
             discountAmount,
             finalAmount,
             discountCode,
+            orderAmount,
+            wasFixed: discountAmount >= orderAmount,
           });
           onDiscountApplied?.(discountAmount, finalAmount, discountCode);
         }
@@ -95,13 +105,23 @@ export function DiscountSection({
 
     if (result) {
       const discountAmount = result.calculation.discountAmount;
-      const finalAmount = result.calculation.finalAmount;
+      let finalAmount = result.calculation.finalAmount;
       const discountCode = result.discount.code;
+
+      // Fix: If discount amount equals or exceeds order amount, final should be 0
+      if (discountAmount >= orderAmount) {
+        console.warn(
+          "⚠️ Backend returned wrong finalAmount for 100% discount. Fixing it."
+        );
+        finalAmount = 0;
+      }
 
       console.log("📞 Calling parent onDiscountApplied callback with:", {
         discountAmount,
         finalAmount,
         discountCode,
+        orderAmount,
+        wasFixed: discountAmount >= orderAmount,
       });
       onDiscountApplied?.(discountAmount, finalAmount, discountCode);
     } else {
@@ -319,7 +339,13 @@ export function DiscountSection({
                 <span className="text-white">Total:</span>
                 <div className="text-right">
                   <div className="text-lg text-white">
-                    ${finalAmount.toLocaleString()}
+                    $
+                    {(() => {
+                      // Fix: If discount equals or exceeds order amount, show 0
+                      const correctedTotal =
+                        discountAmount >= orderAmount ? 0 : finalAmount;
+                      return correctedTotal.toLocaleString();
+                    })()}
                   </div>
                   <div className="text-xs text-green-400">
                     You save ${discountAmount.toLocaleString()}!

@@ -33,10 +33,6 @@ export function PaymentMethodSelector({
 }: PaymentMethodSelectorProps) {
   // Start with no method selected so users can choose
   const [selectedMethod, setSelectedMethod] = useState<PaymentMethod>(null);
-  const [isProcessingFree, setIsProcessingFree] = useState(false);
-
-  // Check if order is free (100% discount)
-  const isFreeOrder = parseFloat(amount) === 0;
 
   const handlePaymentSuccess = (paymentData: any) => {
     console.log("Payment success in selector:", paymentData);
@@ -50,94 +46,6 @@ export function PaymentMethodSelector({
     console.error("Payment error in selector:", error);
     onPaymentError(error);
   };
-
-  const handleFreePurchase = async () => {
-    try {
-      setIsProcessingFree(true);
-      console.log("🎉 Processing free order (100% discount)...", {
-        contractId,
-        amount: 0,
-        discountCode,
-        discountAmount,
-      });
-
-      // Simulate free order completion
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-
-      handlePaymentSuccess({
-        paymentMethod: "free",
-        paymentId: `FREE-${Date.now()}`,
-        contractId,
-        amount: "0.00",
-        status: "completed",
-        discountCode,
-        discountAmount,
-        message: "Order completed with 100% discount",
-      });
-    } catch (error: any) {
-      console.error("❌ Error processing free order:", error);
-      handlePaymentError(error.message || "Failed to process free order");
-    } finally {
-      setIsProcessingFree(false);
-    }
-  };
-
-  // Handle free orders (100% discount)
-  if (isFreeOrder) {
-    return (
-      <Card className="border-2 border-green-500 bg-gradient-to-r from-green-50 to-emerald-50">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-green-700">
-            <Badge className="bg-green-600 text-white text-lg px-4 py-1">
-              100% OFF
-            </Badge>
-            <span>Free Order!</span>
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="text-center space-y-2">
-            <p className="text-lg font-semibold text-green-700">
-              🎉 Your discount code gives you this order completely free!
-            </p>
-            <p className="text-sm text-gray-600">{productName}</p>
-            <div className="flex items-center justify-center gap-2 text-sm text-gray-500">
-              {discountCode && (
-                <Badge variant="outline" className="bg-white">
-                  Code: {discountCode}
-                </Badge>
-              )}
-              <span>
-                Original:{" "}
-                <span className="line-through">
-                  ${(parseFloat(amount) + (discountAmount || 0)).toFixed(2)}
-                </span>
-              </span>
-              <span className="text-2xl font-bold text-green-600">→ $0.00</span>
-            </div>
-          </div>
-
-          <Button
-            className="w-full bg-green-600 hover:bg-green-700 text-white text-lg py-6"
-            onClick={handleFreePurchase}
-            disabled={isProcessingFree}
-          >
-            {isProcessingFree ? (
-              <>
-                <span className="animate-spin mr-2">⏳</span>
-                Processing...
-              </>
-            ) : (
-              <>✓ Complete Free Order</>
-            )}
-          </Button>
-
-          <p className="text-xs text-center text-gray-500">
-            No payment required. Click to complete your order.
-          </p>
-        </CardContent>
-      </Card>
-    );
-  }
 
   if (selectedMethod === "paypal") {
     return (

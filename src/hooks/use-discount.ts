@@ -1,6 +1,7 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { discountService, DiscountVerificationResponse, DiscountVerificationRequest } from '@/lib/services/api/discount';
 import { toast } from './use-toast';
+import { saveDiscountCookie, getDiscountCookie, removeDiscountCookie } from '@/lib/utils/cookies';
 
 interface UseDiscountReturn {
   // State
@@ -32,6 +33,15 @@ export const useDiscount = (initialOrderAmount = 0): UseDiscountReturn => {
   const [isVerifying, setIsVerifying] = useState(false);
   const [isApplying, setIsApplying] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Load discount from cookies on mount
+  useEffect(() => {
+    const savedDiscount = getDiscountCookie();
+    if (savedDiscount && savedDiscount.code) {
+      console.log('📦 Loading saved discount from cookies in hook:', savedDiscount);
+      setDiscountCodeState(savedDiscount.code);
+    }
+  }, []);
 
   /**
    * Set discount code and clear any previous discount
@@ -165,6 +175,9 @@ export const useDiscount = (initialOrderAmount = 0): UseDiscountReturn => {
     setDiscountCode('');
     setAppliedDiscount(null);
     setError(null);
+
+    // Clear discount from cookies
+    removeDiscountCookie();
 
     toast({
       title: "Discount Removed",

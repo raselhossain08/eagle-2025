@@ -47,6 +47,11 @@ import ScriptContract from "@/components/contracts/ScriptContract";
 import TradingTutorContract from "@/components/contracts/TradingTutorContract";
 import UltimateContract from "@/components/contracts/UltimateContract";
 import InvestmentAdvisingContract from "@/components/contracts/InvestmentAdvisingContract";
+import {
+  saveDiscountCookie,
+  getDiscountCookie,
+  removeDiscountCookie,
+} from "@/lib/utils/cookies";
 
 interface CartItem {
   id: string;
@@ -88,27 +93,26 @@ export default function CheckoutContent() {
   const [appliedDiscountAmount, setAppliedDiscountAmount] = useState(0);
   const [discountedTotal, setDiscountedTotal] = useState(0);
 
-  // Load discount from localStorage on mount
+  // Load discount from cookies on mount
   useEffect(() => {
-    const savedDiscount = localStorage.getItem("checkout_discount");
+    const savedDiscount = getDiscountCookie();
     if (savedDiscount) {
-      try {
-        const discount = JSON.parse(savedDiscount);
-        console.log("📦 Loading saved discount from localStorage:", discount);
+      console.log("📦 Loading saved discount from cookies:", savedDiscount);
 
-        // Directly set all discount states
-        if (discount.code && discount.amount && discount.total) {
-          setAppliedDiscountCode(discount.code);
-          setAppliedDiscountAmount(discount.amount);
-          setDiscountedTotal(discount.total);
-          console.log("✅ Discount states restored:", {
-            code: discount.code,
-            amount: discount.amount,
-            total: discount.total,
-          });
-        }
-      } catch (error) {
-        console.error("Error loading saved discount:", error);
+      // Directly set all discount states
+      if (
+        savedDiscount.code &&
+        savedDiscount.amount !== undefined &&
+        savedDiscount.total !== undefined
+      ) {
+        setAppliedDiscountCode(savedDiscount.code);
+        setAppliedDiscountAmount(savedDiscount.amount);
+        setDiscountedTotal(savedDiscount.total);
+        console.log("✅ Discount states restored:", {
+          code: savedDiscount.code,
+          amount: savedDiscount.amount,
+          total: savedDiscount.total,
+        });
       }
     }
   }, []);
@@ -473,12 +477,10 @@ export default function CheckoutContent() {
       return total + priceValue * quantity;
     }, 0);
 
-    // Return discounted total if discount is applied, otherwise return subtotal
-    // For 100% discount, discountedTotal will be 0, which should be returned
-    const finalPrice =
-      discountedTotal >= 0 && appliedDiscountAmount > 0
-        ? discountedTotal
-        : subtotal;
+    // Return discounted total if discount is applied (handles 100% discount where total is 0)
+    // Check if appliedDiscountAmount > 0 to confirm a discount was applied
+    const finalPrice = appliedDiscountAmount > 0 ? discountedTotal : subtotal;
+
     console.log("💵 Final Price Calculation:", {
       subtotal,
       discountedTotal,
@@ -570,22 +572,34 @@ export default function CheckoutContent() {
       discountCode,
       discountAmountType: typeof discountAmount,
       finalAmountType: typeof finalAmount,
+      is100PercentDiscount: finalAmount === 0 && discountAmount > 0,
     });
-    setAppliedDiscountAmount(discountAmount);
-    setDiscountedTotal(finalAmount);
+
+    // Ensure finalAmount is a number and properly set
+    const numericFinalAmount = Number(finalAmount);
+    const numericDiscountAmount = Number(discountAmount);
+
+    console.log("🔢 Numeric values:", {
+      numericFinalAmount,
+      numericDiscountAmount,
+      finalAmountIsZero: numericFinalAmount === 0,
+    });
+
+    setAppliedDiscountAmount(numericDiscountAmount);
+    setDiscountedTotal(numericFinalAmount);
     if (discountCode) {
       setAppliedDiscountCode(discountCode);
     }
 
-    // Save to localStorage for persistence across step navigation
+    // Save to cookies for persistence across step navigation
     const discountData = {
       code: discountCode || "",
-      amount: discountAmount,
-      total: finalAmount,
+      amount: numericDiscountAmount,
+      total: numericFinalAmount,
       timestamp: Date.now(),
     };
-    localStorage.setItem("checkout_discount", JSON.stringify(discountData));
-    console.log("💾 Saved discount to localStorage:", discountData);
+    saveDiscountCookie(discountData);
+    console.log("💾 Saved discount to cookies:", discountData);
   };
 
   // Handle discount removal
@@ -594,8 +608,8 @@ export default function CheckoutContent() {
     setDiscountedTotal(0);
     setAppliedDiscountCode("");
 
-    // Clear from localStorage
-    localStorage.removeItem("checkout_discount");
+    // Clear from cookies
+    removeDiscountCookie();
   };
 
   // Get subtotal before discount
@@ -1102,9 +1116,9 @@ export default function CheckoutContent() {
         note: "Backend multiplies by 100 to convert to cents",
       });
 
-      // Now clear discount from localStorage after capturing the values
-      localStorage.removeItem("checkout_discount");
-      console.log("✅ Cleared discount from localStorage after payment");
+      // Now clear discount from cookies after capturing the values
+      removeDiscountCookie();
+      console.log("✅ Cleared discount from cookies after payment");
 
       // Update payment status in backend
       await updatePaymentStatus(contractId, {
@@ -1463,7 +1477,22 @@ export default function CheckoutContent() {
                       <div className="flex justify-between items-center">
                         <span className="text-white font-semibold">Total:</span>
                         <span className="text-2xl font-bold text-white">
-                          ${getTotalPrice(useMemberPrice).toLocaleString()}
+                          $
+                          {(() => {
+                            const finalTotal =
+                              appliedDiscountAmount > 0
+                                ? discountedTotal
+                                : getTotalPrice(useMemberPrice);
+                            console.log("📊 Step 1 Display Total:", {
+                              appliedDiscountAmount,
+                              discountedTotal,
+                              finalTotal,
+                              is100Percent:
+                                discountedTotal === 0 &&
+                                appliedDiscountAmount > 0,
+                            });
+                            return finalTotal.toLocaleString();
+                          })()}
                         </span>
                       </div>
                     </>
@@ -1881,11 +1910,7 @@ export default function CheckoutContent() {
                       <div className="flex justify-between text-slate-300">
                         <span>Subtotal:</span>
                         <span>
-                          $
-                          {(discountedTotal > 0
-                            ? discountedTotal + appliedDiscountAmount
-                            : getSubtotal(useMemberPrice)
-                          ).toLocaleString()}
+                          ${getSubtotal(useMemberPrice).toLocaleString()}
                         </span>
                       </div>
 
@@ -1921,43 +1946,23 @@ export default function CheckoutContent() {
                     // If discountedTotal is already set (from discount application), use it directly
                     // Otherwise calculate: totalPrice - discount
                     let finalAmount;
-                    if (discountedTotal > 0 && appliedDiscountAmount > 0) {
-                      // discountedTotal is already the final amount after discount
+                    if (appliedDiscountAmount > 0) {
+                      // Use discountedTotal directly (handles 0 for 100% discount)
                       finalAmount = discountedTotal;
                       console.log(
-                        "💰 Using pre-calculated discountedTotal:",
-                        finalAmount
-                      );
-                    } else if (appliedDiscountAmount > 0) {
-                      // Calculate discount on the fly
-                      finalAmount = totalPrice - appliedDiscountAmount;
-                      console.log("💰 Calculating discount:", {
-                        totalPrice,
-                        appliedDiscountAmount,
+                        "💰 Using discountedTotal:",
                         finalAmount,
-                      });
+                        "Original:",
+                        totalPrice
+                      );
                     } else {
                       // No discount
                       finalAmount = totalPrice;
                     }
 
-                    // Ensure finalAmount is never negative or zero
-                    if (finalAmount <= 0) {
-                      console.error("❌ Final amount is invalid!", {
-                        totalPrice,
-                        appliedDiscountAmount,
-                        discountedTotal,
-                        calculatedFinalAmount: finalAmount,
-                        issue: "Discount exceeds total price",
-                      });
-                      // If discount is larger than price, the discount was calculated on wrong base
-                      // Use totalPrice without discount to avoid negative amounts
-                      finalAmount = Math.max(totalPrice, 0.01); // At least 1 cent
-                      console.warn(
-                        "⚠️ Reset finalAmount to totalPrice:",
-                        finalAmount
-                      );
-                    }
+                    // Special handling for 100% discount (free order)
+                    const isFreeOrder =
+                      finalAmount === 0 && appliedDiscountAmount > 0;
 
                     console.log("💳 Payment Method Selector Props:", {
                       contractId,
@@ -1966,33 +1971,52 @@ export default function CheckoutContent() {
                       discountedTotal,
                       discountCode: appliedDiscountCode,
                       discountAmount: appliedDiscountAmount,
-                      willPassDiscount:
-                        appliedDiscountAmount > 0 && finalAmount < totalPrice,
-                      isValid: finalAmount > 0,
+                      isFreeOrder,
+                      willShowPayment: true,
                     });
 
-                    // Only pass discount info if it's valid (discount < totalPrice)
+                    // Pass discount info if it's valid
                     const validDiscount =
                       appliedDiscountAmount > 0 &&
-                      appliedDiscountAmount < totalPrice;
+                      appliedDiscountAmount <= totalPrice;
 
                     return (
-                      <PaymentMethodSelector
-                        contractId={contractId}
-                        amount={Math.abs(finalAmount).toFixed(2)}
-                        productName={`${getTotalItems()} ${
-                          cartItems[0]?.name || "Mentorship Package"
-                        }${getTotalItems() > 1 ? "s" : ""}`}
-                        subscriptionType="monthly"
-                        onPaymentSuccess={handlePaymentSuccess}
-                        onPaymentError={handlePaymentError}
-                        discountCode={
-                          validDiscount ? appliedDiscountCode : undefined
-                        }
-                        discountAmount={
-                          validDiscount ? appliedDiscountAmount : undefined
-                        }
-                      />
+                      <>
+                        {isFreeOrder && (
+                          <div className="bg-green-500/10 border border-green-500/30 rounded-lg p-4 mb-4">
+                            <div className="flex items-center gap-3">
+                              <div className="w-10 h-10 bg-green-500/20 rounded-full flex items-center justify-center">
+                                <CheckCircle className="w-5 h-5 text-green-400" />
+                              </div>
+                              <div>
+                                <h4 className="text-white font-semibold">
+                                  🎉 100% Discount Applied!
+                                </h4>
+                                <p className="text-sm text-slate-300">
+                                  Complete checkout with your preferred payment
+                                  method. No charge will be made.
+                                </p>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+                        <PaymentMethodSelector
+                          contractId={contractId}
+                          amount={finalAmount.toFixed(2)}
+                          productName={`${getTotalItems()} ${
+                            cartItems[0]?.name || "Mentorship Package"
+                          }${getTotalItems() > 1 ? "s" : ""}`}
+                          subscriptionType="monthly"
+                          onPaymentSuccess={handlePaymentSuccess}
+                          onPaymentError={handlePaymentError}
+                          discountCode={
+                            validDiscount ? appliedDiscountCode : undefined
+                          }
+                          discountAmount={
+                            validDiscount ? appliedDiscountAmount : undefined
+                          }
+                        />
+                      </>
                     );
                   })()}
                 </>
