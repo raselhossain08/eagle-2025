@@ -49,7 +49,11 @@ const navigation = [
     tier: "Infinity",
   },
   { name: "Community", href: "/hub/diamond/community", icon: Users },
-  { name: "Billing & Invoices", href: "/hub/diamond/billing", icon: CreditCard },
+  {
+    name: "Billing & Invoices",
+    href: "/hub/diamond/billing",
+    icon: CreditCard,
+  },
   { name: "Subscription", href: "/hub/diamond/subscription", icon: Gem },
 ];
 
@@ -76,12 +80,17 @@ export default function DiamondSidebar({ user }: { user: User }) {
           <li>
             <ul role="list" className="-mx-2 space-y-1">
               {navigation.map((item) => {
-                const hasAccess = !item.tier || item.tier === user.subscription;
+                // ✅ Use case-insensitive matching for exact product names
+                const userSub = (user.subscription || "").toLowerCase();
+                const hasAccess =
+                  !item.tier ||
+                  item.tier.toLowerCase() === userSub ||
+                  userSub.includes(item.tier.toLowerCase());
                 // Allow Diamond members to access premium pages for preview
                 const canAccess =
                   !item.tier ||
-                  user.subscription === "Diamond" ||
-                  user.subscription === "Infinity";
+                  userSub.includes("diamond") ||
+                  userSub.includes("infinity");
 
                 return (
                   <li key={item.name}>

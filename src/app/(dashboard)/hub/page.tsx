@@ -18,23 +18,24 @@ export default function HubPage() {
 
     if (!loading && isAuthenticated && profile) {
       // Redirect based on subscription level
-      switch (profile.subscription) {
-        case "Basic":
-          router.push("/hub/basic");
-          break;
-        case "Diamond":
-          router.push("/hub/diamond");
-          break;
-        case "Infinity":
-          router.push("/hub/infinity");
-          break;
-        case "Script":
-          router.push("/hub/script");
-          break;
-        case "None":
-        default:
-          router.push("/hub/basic");
-          break;
+      // ✅ Use case-insensitive matching to handle exact product names
+      const subscription = (profile.subscription || "").toLowerCase();
+
+      if (subscription.includes("infinity")) {
+        router.push("/hub/infinity");
+      } else if (subscription.includes("diamond")) {
+        router.push("/hub/diamond");
+      } else if (subscription.includes("script")) {
+        router.push("/hub/script");
+      } else if (
+        subscription.includes("basic") ||
+        subscription === "none" ||
+        !subscription
+      ) {
+        router.push("/hub/basic");
+      } else {
+        // Default fallback for any other subscription
+        router.push("/hub/basic");
       }
     }
   }, [loading, isAuthenticated, profile, router]);

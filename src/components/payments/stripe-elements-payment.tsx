@@ -82,9 +82,14 @@ function PaymentForm({
       );
 
       const finalAmount = parseFloat(amount);
-      console.log("💰 Final amount to charge:", finalAmount);
-      console.log("🎟️ Discount code:", discountCode || "None");
-      console.log("💵 Discount amount:", discountAmount || 0);
+      console.log("🔍 STRIPE PAYMENT DEBUG:");
+      console.log("  📦 Contract ID:", contractId);
+      console.log("  💰 Amount prop received:", amount, typeof amount);
+      console.log("  💰 Final amount to charge:", finalAmount);
+      console.log("  🎟️ Discount code:", discountCode || "None");
+      console.log("  💵 Discount amount:", discountAmount || 0);
+      console.log("  📋 Product name:", productName);
+      console.log("  🔄 Subscription type:", subscriptionType);
 
       // For $0 orders (100% discount), bypass Stripe and record free transaction
       if (finalAmount === 0) {

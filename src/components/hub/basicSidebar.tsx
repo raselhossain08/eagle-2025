@@ -82,12 +82,17 @@ export default function BasicSidebar({ user }: { user: User }) {
           <li>
             <ul role="list" className="-mx-2 space-y-1">
               {navigation.map((item) => {
-                const hasAccess = !item.tier || item.tier === user.subscription;
-                // Allow Diamond members to access premium pages for preview
+                // ✅ Use case-insensitive matching for exact product names
+                const userSub = (user.subscription || "").toLowerCase();
+                const hasAccess =
+                  !item.tier ||
+                  item.tier.toLowerCase() === userSub ||
+                  userSub.includes(item.tier.toLowerCase());
+                // Allow higher tier members to access lower tier content
                 const canAccess =
                   !item.tier ||
-                  user.subscription === "Diamond" ||
-                  user.subscription === "Infinity";
+                  userSub.includes("diamond") ||
+                  userSub.includes("infinity");
 
                 return (
                   <li key={item.name}>

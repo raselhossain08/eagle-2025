@@ -83,14 +83,19 @@ export default function ScriptSidebar({ user }: { user: User }) {
           <li>
             <ul role="list" className="-mx-2 space-y-1">
               {navigation.map((item) => {
-                const hasAccess = !item.tier || item.tier === user.subscription;
+                // ✅ Use case-insensitive matching for exact product names
+                const userSub = (user.subscription || "").toLowerCase();
+                const hasAccess =
+                  !item.tier ||
+                  item.tier.toLowerCase() === userSub ||
+                  userSub.includes(item.tier.toLowerCase());
                 // Script tier should have access to all Script features
                 // Allow Diamond and Infinity members to access premium pages for preview
                 const canAccess =
                   !item.tier ||
-                  user.subscription === "Script" ||
-                  user.subscription === "Diamond" ||
-                  user.subscription === "Infinity";
+                  userSub.includes("script") ||
+                  userSub.includes("diamond") ||
+                  userSub.includes("infinity");
 
                 // Special handling for Trading Scripts - show green star when accessible
                 const showGreenStar =

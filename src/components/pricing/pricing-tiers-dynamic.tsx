@@ -10,7 +10,15 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Check, Zap, Star, Gem, InfinityIcon, Crown, Sparkles } from "lucide-react";
+import {
+  Check,
+  Zap,
+  Star,
+  Gem,
+  InfinityIcon,
+  Crown,
+  Sparkles,
+} from "lucide-react";
 import Link from "next/link";
 import { toast } from "@/hooks/use-toast";
 import { useAuth } from "@/context/authContext";
@@ -43,19 +51,19 @@ export function PricingTiers() {
       try {
         setLoading(true);
         setError(null);
-        
+
         const subscriptionPlans = await PlanService.getSubscriptionPlans();
-        
+
         // Sort plans by sortOrder and ensure they're active
         const activePlans = subscriptionPlans
-          .filter(plan => plan.isActive)
+          .filter((plan) => plan.isActive)
           .sort((a, b) => a.sortOrder - b.sortOrder);
-        
+
         setPlans(activePlans);
       } catch (err: any) {
-        console.error('Error loading plans:', err);
-        setError('Failed to load pricing plans. Please try again later.');
-        
+        console.error("Error loading plans:", err);
+        setError("Failed to load pricing plans. Please try again later.");
+
         // Fallback to empty array or could use hardcoded plans
         setPlans([]);
       } finally {
@@ -90,12 +98,13 @@ export function PricingTiers() {
 
       // Match subscription types (flexible matching)
       const planName = subscriptionType.toLowerCase();
-      const contractType = (contract.productType || '').toLowerCase();
-      
-      return isActive && (
-        contractType.includes(planName) ||
-        contractType === planName ||
-        contractType === `${planName}-subscription`
+      const contractType = (contract.productType || "").toLowerCase();
+
+      return (
+        isActive &&
+        (contractType.includes(planName) ||
+          contractType === planName ||
+          contractType === `${planName}-subscription`)
       );
     });
   };
@@ -103,15 +112,16 @@ export function PricingTiers() {
   // Function to handle subscription purchase
   const handleSubscriptionPurchase = (plan: FrontendPlan) => {
     const planName = plan.name.toLowerCase();
-    
+
     // Check for free plans
-    const isFree = plan.pricing.monthly?.price === 0 || 
-                   plan.pricing.annual?.price === 0 || 
-                   plan.pricing.oneTime?.price === 0;
-    
+    const isFree =
+      plan.pricing.monthly?.price === 0 ||
+      plan.pricing.annual?.price === 0 ||
+      plan.pricing.oneTime?.price === 0;
+
     if (isFree) {
       // Free tier - could redirect to signup or handle differently
-      if (plan.name.toLowerCase().includes('basic')) {
+      if (plan.name.toLowerCase().includes("basic")) {
         window.open("https://pe333tij.sibpages.com", "_blank");
         return;
       }
@@ -130,7 +140,7 @@ export function PricingTiers() {
     // Get pricing based on billing cycle
     let price = 0;
     let originalPrice = 0;
-    
+
     if (isAnnual && plan.pricing.annual) {
       price = plan.pricing.annual.price;
       originalPrice = plan.pricing.annual.originalPrice || price;
@@ -142,10 +152,22 @@ export function PricingTiers() {
       originalPrice = plan.pricing.oneTime.originalPrice || price;
     }
 
+    console.log("🗑️ Clearing previous cart and discount data...");
+
+    // ✅ Clear previous cart and discount data before adding new subscription
+    localStorage.removeItem("cart");
+    localStorage.removeItem("checkout_discount");
+    document.cookie =
+      "discount_code=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+    document.cookie =
+      "discount_data=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+
     // Create cart item for paid subscriptions
     const subscriptionItem = {
       id: plan._id,
-      name: `${plan.displayName} ${isAnnual ? "Annual" : "Monthly"} Subscription`,
+      name: `${plan.displayName} ${
+        isAnnual ? "Annual" : "Monthly"
+      } Subscription`,
       price: price,
       originalPrice: originalPrice,
       memberPrice: plan.pricing.oneTime?.memberPrice || price,
@@ -156,6 +178,8 @@ export function PricingTiers() {
 
     // Save to localStorage and navigate to checkout
     localStorage.setItem("cart", JSON.stringify([subscriptionItem]));
+
+    console.log("✅ Cart updated with new subscription:", subscriptionItem);
 
     toast({
       title: "Added to Cart",
@@ -168,18 +192,27 @@ export function PricingTiers() {
   // Helper functions for plan data
   const getPlanPrice = (plan: FrontendPlan, annual: boolean = false) => {
     if (annual && plan.pricing.annual) {
-      return plan.pricing.annual.price === 0 ? "Free" : `$${plan.pricing.annual.price}`;
+      return plan.pricing.annual.price === 0
+        ? "Free"
+        : `$${plan.pricing.annual.price}`;
     }
     if (plan.pricing.monthly) {
-      return plan.pricing.monthly.price === 0 ? "Free" : `$${plan.pricing.monthly.price}`;
+      return plan.pricing.monthly.price === 0
+        ? "Free"
+        : `$${plan.pricing.monthly.price}`;
     }
     if (plan.pricing.oneTime) {
-      return plan.pricing.oneTime.price === 0 ? "Free" : `$${plan.pricing.oneTime.price}`;
+      return plan.pricing.oneTime.price === 0
+        ? "Free"
+        : `$${plan.pricing.oneTime.price}`;
     }
     return "Free";
   };
 
-  const getPlanOriginalPrice = (plan: FrontendPlan, annual: boolean = false) => {
+  const getPlanOriginalPrice = (
+    plan: FrontendPlan,
+    annual: boolean = false
+  ) => {
     if (annual && plan.pricing.annual?.originalPrice) {
       return `$${plan.pricing.annual.originalPrice}`;
     }
@@ -193,26 +226,34 @@ export function PricingTiers() {
   };
 
   const getPlanDiscount = (plan: FrontendPlan, annual: boolean = false) => {
-    const currentPrice = annual && plan.pricing.annual ? plan.pricing.annual.price : 
-                        plan.pricing.monthly?.price || plan.pricing.oneTime?.price || 0;
-    const originalPrice = annual && plan.pricing.annual?.originalPrice ? plan.pricing.annual.originalPrice :
-                         plan.pricing.monthly?.originalPrice || plan.pricing.oneTime?.originalPrice;
-    
+    const currentPrice =
+      annual && plan.pricing.annual
+        ? plan.pricing.annual.price
+        : plan.pricing.monthly?.price || plan.pricing.oneTime?.price || 0;
+    const originalPrice =
+      annual && plan.pricing.annual?.originalPrice
+        ? plan.pricing.annual.originalPrice
+        : plan.pricing.monthly?.originalPrice ||
+          plan.pricing.oneTime?.originalPrice;
+
     if (!originalPrice || originalPrice <= currentPrice) return null;
-    
+
     const discount = Math.round((1 - currentPrice / originalPrice) * 100);
     return `${discount}%`;
   };
 
   const getPlanIcon = (plan: FrontendPlan) => {
-    const iconName = plan.ui.icon?.toLowerCase() || plan.category?.toLowerCase() || 'star';
+    const iconName =
+      plan.ui.icon?.toLowerCase() || plan.category?.toLowerCase() || "star";
     return iconMap[iconName as keyof typeof iconMap] || Star;
   };
 
   const isFree = (plan: FrontendPlan) => {
-    return (plan.pricing.monthly?.price || 0) === 0 && 
-           (plan.pricing.annual?.price || 0) === 0 && 
-           (plan.pricing.oneTime?.price || 0) === 0;
+    return (
+      (plan.pricing.monthly?.price || 0) === 0 &&
+      (plan.pricing.annual?.price || 0) === 0 &&
+      (plan.pricing.oneTime?.price || 0) === 0
+    );
   };
 
   // Loading state
@@ -254,10 +295,12 @@ export function PricingTiers() {
       <section className="relative bg-slate-900 py-24 overflow-hidden">
         <div className="container mx-auto px-4 relative z-10">
           <div className="text-center">
-            <h2 className="text-3xl font-bold text-white mb-4">Oops! Something went wrong</h2>
+            <h2 className="text-3xl font-bold text-white mb-4">
+              Oops! Something went wrong
+            </h2>
             <p className="text-gray-300 mb-8">{error}</p>
-            <Button 
-              onClick={() => window.location.reload()} 
+            <Button
+              onClick={() => window.location.reload()}
               className="bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700"
             >
               Try Again
@@ -274,8 +317,12 @@ export function PricingTiers() {
       <section className="relative bg-slate-900 py-24 overflow-hidden">
         <div className="container mx-auto px-4 relative z-10">
           <div className="text-center">
-            <h2 className="text-3xl font-bold text-white mb-4">No Plans Available</h2>
-            <p className="text-gray-300">Please check back later for our subscription plans.</p>
+            <h2 className="text-3xl font-bold text-white mb-4">
+              No Plans Available
+            </h2>
+            <p className="text-gray-300">
+              Please check back later for our subscription plans.
+            </p>
           </div>
         </div>
       </section>
@@ -318,7 +365,7 @@ export function PricingTiers() {
           </p>
 
           {/* Billing Toggle - Only show if there are annual plans available */}
-          {plans.some(plan => plan.pricing.annual) && (
+          {plans.some((plan) => plan.pricing.annual) && (
             <div className="flex items-center justify-center mt-12 mb-8">
               <div className="bg-slate-800/50 backdrop-blur-sm rounded-2xl p-2 border border-slate-600/50">
                 <div className="flex items-center space-x-1">
@@ -359,7 +406,9 @@ export function PricingTiers() {
             const discount = getPlanDiscount(plan, isAnnual);
             const isPopular = plan.isPopular;
             const isFeatured = plan.isFeatured;
-            const isUltimate = plan.category?.toLowerCase() === 'ultimate' || plan.category?.toLowerCase() === 'infinity';
+            const isUltimate =
+              plan.category?.toLowerCase() === "ultimate" ||
+              plan.category?.toLowerCase() === "infinity";
 
             return (
               <div key={plan._id} className="relative group">
@@ -376,7 +425,7 @@ export function PricingTiers() {
                 {isUltimate && (
                   <div className="absolute -top-6 left-1/2 transform -translate-x-1/2 z-10">
                     <div className="bg-gradient-to-r from-yellow-400 to-amber-600 text-white px-6 py-2 rounded-full text-sm font-semibold shadow-lg shadow-yellow-500/30">
-                      {plan.ui.badgeText || 'PREMIUM'}
+                      {plan.ui.badgeText || "PREMIUM"}
                     </div>
                   </div>
                 )}
@@ -394,7 +443,9 @@ export function PricingTiers() {
                 >
                   <CardHeader className="text-center pb-8 pt-12">
                     <div
-                      className={`w-20 h-20 bg-gradient-to-br ${plan.ui.gradient || 'from-blue-500 to-purple-600'} rounded-2xl flex items-center justify-center mx-auto mb-6 group-hover:scale-110 transition-transform duration-300`}
+                      className={`w-20 h-20 bg-gradient-to-br ${
+                        plan.ui.gradient || "from-blue-500 to-purple-600"
+                      } rounded-2xl flex items-center justify-center mx-auto mb-6 group-hover:scale-110 transition-transform duration-300`}
                     >
                       <PlanIcon className="w-10 h-10 text-white" />
                     </div>
@@ -422,8 +473,11 @@ export function PricingTiers() {
                           </span>
                           {price !== "Free" && (
                             <span className="text-gray-300 text-xl">
-                              {isAnnual && plan.pricing.annual ? "/year" :
-                               plan.pricing.monthly ? "/month" : ""}
+                              {isAnnual && plan.pricing.annual
+                                ? "/year"
+                                : plan.pricing.monthly
+                                ? "/month"
+                                : ""}
                             </span>
                           )}
                         </div>
@@ -434,8 +488,11 @@ export function PricingTiers() {
                             <div className="flex items-center space-x-2">
                               <span className="text-gray-400 text-lg line-through">
                                 {originalPrice}
-                                {isAnnual && plan.pricing.annual ? "/year" :
-                                 plan.pricing.monthly ? "/month" : ""}
+                                {isAnnual && plan.pricing.annual
+                                  ? "/year"
+                                  : plan.pricing.monthly
+                                  ? "/month"
+                                  : ""}
                               </span>
                             </div>
                             {discount && (
@@ -452,7 +509,10 @@ export function PricingTiers() {
                   <CardContent className="flex flex-col flex-grow justify-between space-y-8 pb-8">
                     <ul className="space-y-4 flex-grow">
                       {plan.features.map((feature, featureIndex) => (
-                        <li key={featureIndex} className="flex items-start space-x-3">
+                        <li
+                          key={featureIndex}
+                          className="flex items-start space-x-3"
+                        >
                           <div
                             className={`w-6 h-6 bg-gradient-to-br ${
                               isUltimate
@@ -472,10 +532,12 @@ export function PricingTiers() {
                     <Button
                       onClick={() => handleSubscriptionPurchase(plan)}
                       disabled={
-                        !isFree(plan) && hasSubscription(plan.name.toLowerCase())
+                        !isFree(plan) &&
+                        hasSubscription(plan.name.toLowerCase())
                       }
                       className={`w-full py-4 text-lg font-semibold rounded-xl transition-all duration-300 ${
-                        !isFree(plan) && hasSubscription(plan.name.toLowerCase())
+                        !isFree(plan) &&
+                        hasSubscription(plan.name.toLowerCase())
                           ? "bg-gradient-to-r from-green-500 to-emerald-600 text-white cursor-not-allowed opacity-80"
                           : isUltimate
                           ? "bg-gradient-to-r from-yellow-400 to-amber-600 hover:from-yellow-500 hover:to-amber-700 text-slate-900 shadow-lg hover:shadow-yellow-500/40 font-bold"
@@ -498,12 +560,12 @@ export function PricingTiers() {
         </div>
 
         {/* Free plan promotion - only show if there are free plans */}
-        {plans.some(plan => isFree(plan)) && (
+        {plans.some((plan) => isFree(plan)) && (
           <div className="text-center mt-16">
             <div className="bg-gradient-to-r from-slate-800/50 to-slate-700/50 backdrop-blur-sm rounded-3xl p-8 border border-slate-600/50 max-w-2xl mx-auto">
               <p className="text-gray-300 mb-6 text-lg">
-                New to Eagle Investors? Start with our free Basic plan and explore
-                our platform risk-free.
+                New to Eagle Investors? Start with our free Basic plan and
+                explore our platform risk-free.
               </p>
               <Link href="https://pe333tij.sibpages.com" target="_blank">
                 <Button className="bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 text-white px-8 py-3 text-lg font-semibold rounded-xl shadow-lg hover:shadow-cyan-500/25 transition-all duration-300">

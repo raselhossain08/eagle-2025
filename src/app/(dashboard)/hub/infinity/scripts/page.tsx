@@ -29,7 +29,10 @@ import { ComplianceTooltip } from "@/components/shared/compliance-tooltip";
 export default function ScriptsPage() {
   const router = useRouter();
   const user = mockUser;
-  const hasAccess = user.subscription === "Infinity";
+  // ✅ Use case-insensitive matching for exact product names
+  const hasAccess = (user.subscription || "")
+    .toLowerCase()
+    .includes("infinity");
 
   const scriptExamples = [
     {
@@ -324,22 +327,23 @@ export default function ScriptsPage() {
                       </p>
                     </div>
                   </div>
-                  <Button 
+                  <Button
                     onClick={() => {
                       // Create cart item from the package
                       const cartItem = {
-                        id: 'quantitative-trading-script',
-                        name: 'Quantitative Trading Script',
-                        price: '47',
-                        description: 'Powerful algorithmic trading script with advanced features',
-                        type: "script-purchase"
+                        id: "quantitative-trading-script",
+                        name: "Quantitative Trading Script",
+                        price: "47",
+                        description:
+                          "Powerful algorithmic trading script with advanced features",
+                        type: "script-purchase",
                       };
-                      
+
                       // Save to localStorage
-                      localStorage.setItem('cart', JSON.stringify([cartItem]));
-                      
+                      localStorage.setItem("cart", JSON.stringify([cartItem]));
+
                       // Navigate to checkout using Next.js router
-                      router.push('/checkout');
+                      router.push("/checkout");
                     }}
                     className="w-full bg-gradient-to-r from-brand-primary to-brand-cyan hover:from-brand-primary/90 hover:to-brand-cyan/90 text-white font-bold text-lg py-3 shadow-glow-cyan transition-all duration-200 hover:scale-105"
                   >

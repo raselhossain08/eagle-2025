@@ -14,7 +14,9 @@ import { Check, Zap, Star, Gem, InfinityIcon, Loader2 } from "lucide-react";
 import Link from "next/link";
 import { toast } from "@/hooks/use-toast";
 import { useAuth } from "@/context/authContext";
-import PlanService, { type FrontendPlan } from "@/lib/services/core/plan.service";
+import PlanService, {
+  type FrontendPlan,
+} from "@/lib/services/core/plan.service";
 
 // Icon mapping for dynamic icons
 const iconMapping: Record<string, any> = {
@@ -50,61 +52,79 @@ export function PricingTiers() {
     const fetchPlans = async () => {
       const loadingTimeout = setTimeout(() => {
         if (isLoading) {
-          console.warn('Plans API taking longer than expected...');
+          console.warn("Plans API taking longer than expected...");
         }
       }, 5000);
-      
+
       try {
         setIsLoading(true);
         setError(null);
-        
+
         // Fetch subscription plans from backend with timeout
         const subscriptionPlans = await PlanService.getSubscriptionPlans();
-        
+
         // Transform backend data for UI
-        const transformedPlans: DynamicPlan[] = subscriptionPlans.map(plan => ({
-          ...plan,
-          iconComponent: iconMapping[plan.ui?.icon] || Star,
-          displayPrice: plan.pricing?.monthly?.price === 0 ? 'Free' : `$${plan.pricing?.monthly?.price}`,
-          displayOriginalPrice: plan.pricing?.monthly?.originalPrice ? `$${plan.pricing.monthly.originalPrice}` : null,
-          displayAnnualPrice: plan.pricing?.annual?.price === 0 ? 'Free' : `$${plan.pricing?.annual?.price}`,
-          displayAnnualOriginalPrice: plan.pricing?.annual?.originalPrice ? `$${plan.pricing.annual.originalPrice}` : null,
-          cta: plan.pricing?.monthly?.price === 0 ? "Get Started Free" : `Start ${plan.displayName}`,
-          href: plan.pricing?.monthly?.price === 0 ? "https://pe333tij.sibpages.com" : "/pricing",
-        }));
+        const transformedPlans: DynamicPlan[] = subscriptionPlans.map(
+          (plan) => ({
+            ...plan,
+            iconComponent: iconMapping[plan.ui?.icon] || Star,
+            displayPrice:
+              plan.pricing?.monthly?.price === 0
+                ? "Free"
+                : `$${plan.pricing?.monthly?.price}`,
+            displayOriginalPrice: plan.pricing?.monthly?.originalPrice
+              ? `$${plan.pricing.monthly.originalPrice}`
+              : null,
+            displayAnnualPrice:
+              plan.pricing?.annual?.price === 0
+                ? "Free"
+                : `$${plan.pricing?.annual?.price}`,
+            displayAnnualOriginalPrice: plan.pricing?.annual?.originalPrice
+              ? `$${plan.pricing.annual.originalPrice}`
+              : null,
+            cta:
+              plan.pricing?.monthly?.price === 0
+                ? "Get Started Free"
+                : `Start ${plan.displayName}`,
+            href:
+              plan.pricing?.monthly?.price === 0
+                ? "https://pe333tij.sibpages.com"
+                : "/pricing",
+          })
+        );
 
         // Sort by sortOrder
         transformedPlans.sort((a, b) => a.sortOrder - b.sortOrder);
         setPlans(transformedPlans);
       } catch (err) {
-        console.error('Error fetching plans:', err);
-        setError('Unable to load pricing plans at this time');
-        
+        console.error("Error fetching plans:", err);
+        setError("Unable to load pricing plans at this time");
+
         // Use fallback static plans for production reliability
         const fallbackPlans: DynamicPlan[] = [
           {
-            _id: 'basic-fallback',
-            name: 'basic',
-            displayName: 'Basic Plan',
-            description: 'Educational resources and basic market information',
-            planType: 'subscription',
-            category: 'basic',
+            _id: "basic-fallback",
+            name: "basic",
+            displayName: "Basic Plan",
+            description: "Educational resources and basic market information",
+            planType: "subscription",
+            category: "basic",
             pricing: {
               monthly: { price: 0, originalPrice: 0 },
-              annual: { price: 0, originalPrice: 0 }
+              annual: { price: 0, originalPrice: 0 },
             },
             features: [
-              'Market education content',
-              'Chatroom for Free Users', 
-              'Basic market updates',
-              'Email support'
+              "Market education content",
+              "Chatroom for Free Users",
+              "Basic market updates",
+              "Email support",
             ],
             ui: {
-              icon: 'star',
-              gradient: 'from-gray-500 to-slate-600',
-              color: 'gray',
-              badgeText: 'Free',
-              badgeColor: 'gray'
+              icon: "star",
+              gradient: "from-gray-500 to-slate-600",
+              color: "gray",
+              badgeText: "Free",
+              badgeColor: "gray",
             },
             isActive: true,
             isPopular: false,
@@ -112,44 +132,44 @@ export function PricingTiers() {
             isFeatured: false,
             sortOrder: 1,
             accessLevel: 1,
-            tags: ['free', 'basic'],
+            tags: ["free", "basic"],
             iconComponent: Star,
-            displayPrice: 'Free',
-            displayAnnualPrice: 'Free',
-            cta: 'Get Started Free',
-            href: 'https://pe333tij.sibpages.com'
+            displayPrice: "Free",
+            displayAnnualPrice: "Free",
+            cta: "Get Started Free",
+            href: "https://pe333tij.sibpages.com",
           },
           {
-            _id: 'diamond-fallback',
-            name: 'diamond',
-            displayName: 'Diamond Plan',
-            description: 'Professional services for active investors',
-            planType: 'subscription',
-            category: 'diamond',
+            _id: "diamond-fallback",
+            name: "diamond",
+            displayName: "Diamond Plan",
+            description: "Professional services for active investors",
+            planType: "subscription",
+            category: "diamond",
             pricing: {
               monthly: { price: 76, originalPrice: 97 },
-              annual: { price: 760, originalPrice: 1164 }
+              annual: { price: 760, originalPrice: 1164 },
             },
             features: [
-              'Stock Trades Entry & Exit Alerts',
-              'AI Advisor',
-              'Option Day Trade Alerts',
-              'Option Swing Trades Alerts',
-              '24/7 Chat Room (Diamond Chat)',
-              'Daily Live Trading Stream (Every Market Day)',
-              'Investment Recommendations',
-              'Daily & Weekly Watchlists',
-              'Unusual Options Activity Cheat Sheet',
-              'AI Stock Breakouts',
-              'Analyst Grades & Insider Orders',
-              'Darkpool and Scalp Ideas'
+              "Stock Trades Entry & Exit Alerts",
+              "AI Advisor",
+              "Option Day Trade Alerts",
+              "Option Swing Trades Alerts",
+              "24/7 Chat Room (Diamond Chat)",
+              "Daily Live Trading Stream (Every Market Day)",
+              "Investment Recommendations",
+              "Daily & Weekly Watchlists",
+              "Unusual Options Activity Cheat Sheet",
+              "AI Stock Breakouts",
+              "Analyst Grades & Insider Orders",
+              "Darkpool and Scalp Ideas",
             ],
             ui: {
-              icon: 'diamond',
-              gradient: 'from-blue-500 to-purple-600',
-              color: 'blue',
-              badgeText: 'Most Popular',
-              badgeColor: 'blue'
+              icon: "diamond",
+              gradient: "from-blue-500 to-purple-600",
+              color: "blue",
+              badgeText: "Most Popular",
+              badgeColor: "blue",
             },
             isActive: true,
             isPopular: true,
@@ -157,44 +177,44 @@ export function PricingTiers() {
             isFeatured: false,
             sortOrder: 2,
             accessLevel: 2,
-            tags: ['premium', 'trading'],
+            tags: ["premium", "trading"],
             iconComponent: Gem,
-            displayPrice: '$76',
-            displayOriginalPrice: '$97',
-            displayAnnualPrice: '$760',
-            displayAnnualOriginalPrice: '$1,164',
-            cta: 'Start Diamond Service',
-            href: '/pricing'
+            displayPrice: "$76",
+            displayOriginalPrice: "$97",
+            displayAnnualPrice: "$760",
+            displayAnnualOriginalPrice: "$1,164",
+            cta: "Start Diamond Service",
+            href: "/pricing",
           },
           {
-            _id: 'infinity-fallback', 
-            name: 'infinity',
-            displayName: 'Infinity Plan',
-            description: 'Comprehensive investment service with advanced tools',
-            planType: 'subscription',
-            category: 'infinity',
+            _id: "infinity-fallback",
+            name: "infinity",
+            displayName: "Infinity Plan",
+            description: "Comprehensive investment service with advanced tools",
+            planType: "subscription",
+            category: "infinity",
             pricing: {
               monthly: { price: 127, originalPrice: 187 },
-              annual: { price: 1270, originalPrice: 2244 }
+              annual: { price: 1270, originalPrice: 2244 },
             },
             features: [
-              'All Diamond features',
-              'Advanced market screening (20-25 securities)',
-              'Professional Quant Trading Script Access',
-              'Direct Infinity Advisory Tickets',
-              'Bi-weekly Eagle Portfolios Review Stream (Recorded)',
-              'Priority Challenge SMS Alerts',
-              'AI Advisor (Enhanced)',
-              'Complete education library',
-              'Custom analysis tools',
-              'VIP advisory support'
+              "All Diamond features",
+              "Advanced market screening (20-25 securities)",
+              "Professional Quant Trading Script Access",
+              "Direct Infinity Advisory Tickets",
+              "Bi-weekly Eagle Portfolios Review Stream (Recorded)",
+              "Priority Challenge SMS Alerts",
+              "AI Advisor (Enhanced)",
+              "Complete education library",
+              "Custom analysis tools",
+              "VIP advisory support",
             ],
             ui: {
-              icon: 'infinity',
-              gradient: 'from-yellow-400 to-amber-600',
-              color: 'yellow',
-              badgeText: 'PREMIUM',
-              badgeColor: 'orange'
+              icon: "infinity",
+              gradient: "from-yellow-400 to-amber-600",
+              color: "yellow",
+              badgeText: "PREMIUM",
+              badgeColor: "orange",
             },
             isActive: true,
             isPopular: false,
@@ -202,15 +222,15 @@ export function PricingTiers() {
             isFeatured: true,
             sortOrder: 3,
             accessLevel: 3,
-            tags: ['enterprise', 'premium'],
+            tags: ["enterprise", "premium"],
             iconComponent: InfinityIcon,
-            displayPrice: '$127',
-            displayOriginalPrice: '$187',
-            displayAnnualPrice: '$1,270',
-            displayAnnualOriginalPrice: '$2,244',
-            cta: 'Start Infinity Service',
-            href: '/pricing'
-          }
+            displayPrice: "$127",
+            displayOriginalPrice: "$187",
+            displayAnnualPrice: "$1,270",
+            displayAnnualOriginalPrice: "$2,244",
+            cta: "Start Infinity Service",
+            href: "/pricing",
+          },
         ];
         setPlans(fallbackPlans);
       } finally {
@@ -285,17 +305,29 @@ export function PricingTiers() {
     }
 
     // Create cart item for paid subscriptions
-    const currentPrice = isAnnual 
-      ? (plan.pricing?.annual?.price || 0)
-      : (plan.pricing?.monthly?.price || 0);
-      
-    const originalPrice = isAnnual 
-      ? (plan.pricing?.annual?.originalPrice || currentPrice)
-      : (plan.pricing?.monthly?.originalPrice || currentPrice);
+    const currentPrice = isAnnual
+      ? plan.pricing?.annual?.price || 0
+      : plan.pricing?.monthly?.price || 0;
+
+    const originalPrice = isAnnual
+      ? plan.pricing?.annual?.originalPrice || currentPrice
+      : plan.pricing?.monthly?.originalPrice || currentPrice;
+
+    console.log("🗑️ Clearing previous cart and discount data...");
+
+    // ✅ Clear previous cart and discount data before adding new subscription
+    localStorage.removeItem("cart");
+    localStorage.removeItem("checkout_discount");
+    document.cookie =
+      "discount_code=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+    document.cookie =
+      "discount_data=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
 
     const subscriptionItem = {
       id: plan.name,
-      name: `${plan.displayName} ${isAnnual ? "Annual" : "Monthly"} Subscription`,
+      name: `${plan.displayName} ${
+        isAnnual ? "Annual" : "Monthly"
+      } Subscription`,
       price: currentPrice,
       originalPrice: originalPrice,
       memberPrice: currentPrice,
@@ -305,6 +337,8 @@ export function PricingTiers() {
     };
 
     localStorage.setItem("cart", JSON.stringify([subscriptionItem]));
+
+    console.log("✅ Cart updated with new subscription:", subscriptionItem);
 
     toast({
       title: "Added to Cart",
@@ -407,11 +441,15 @@ export function PricingTiers() {
           {plans.map((plan, index) => {
             const IconComponent = plan.iconComponent;
             const hasActiveSubscription = hasSubscription(plan.category);
-            const isInfinity = plan.category === 'infinity';
-            const currentPrice = isAnnual ? plan.displayAnnualPrice : plan.displayPrice;
-            const originalPrice = isAnnual ? plan.displayAnnualOriginalPrice : plan.displayOriginalPrice;
-            const discount = isAnnual 
-              ? plan.pricing?.annual?.discount 
+            const isInfinity = plan.category === "infinity";
+            const currentPrice = isAnnual
+              ? plan.displayAnnualPrice
+              : plan.displayPrice;
+            const originalPrice = isAnnual
+              ? plan.displayAnnualOriginalPrice
+              : plan.displayOriginalPrice;
+            const discount = isAnnual
+              ? plan.pricing?.annual?.discount
               : plan.pricing?.monthly?.discount;
 
             return (
@@ -448,9 +486,7 @@ export function PricingTiers() {
                     <div
                       className={`w-20 h-20 bg-gradient-to-br ${plan.ui?.gradient} rounded-2xl flex items-center justify-center mx-auto mb-6 group-hover:scale-110 transition-transform duration-300`}
                     >
-                      <IconComponent
-                        className={`w-10 h-10 text-white`}
-                      />
+                      <IconComponent className={`w-10 h-10 text-white`} />
                     </div>
                     <CardTitle
                       className={`text-3xl font-bold mb-2 ${

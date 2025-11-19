@@ -178,7 +178,9 @@ export default function SubscriptionPage() {
   const handleSubscriptionUpdate = async (
     newSubscription: "None" | "Basic" | "Diamond" | "Infinity"
   ) => {
-    if (newSubscription === user.subscription) return;
+    // ✅ Use case-insensitive includes matching for exact product names
+    const currentSub = (user.subscription || "").toLowerCase();
+    if (currentSub.includes(newSubscription.toLowerCase())) return;
 
     setIsUpdating(true);
     try {

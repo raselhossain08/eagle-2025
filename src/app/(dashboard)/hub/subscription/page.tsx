@@ -46,14 +46,14 @@ export default function SubscriptionPage() {
   const { profile, loading } = useAuth();
   const router = useRouter();
   const [subscriptions, setSubscriptions] = useState<SubscriptionInfo[]>([]);
-  
+
   // Get API subscription data
-  const { 
-    subscriptionStatus, 
-    userSubscriptions, 
-    loading: subscriptionLoading, 
+  const {
+    subscriptionStatus,
+    userSubscriptions,
+    loading: subscriptionLoading,
     error: subscriptionError,
-    refetch 
+    refetch,
   } = useSubscriptionStatus();
 
   useEffect(() => {
@@ -114,37 +114,51 @@ export default function SubscriptionPage() {
 
     // Process API-based subscriptions
     if (userSubscriptions) {
-      const apiSubscriptions = [...userSubscriptions.active, ...userSubscriptions.inactive];
-      
+      const apiSubscriptions = [
+        ...userSubscriptions.active,
+        ...userSubscriptions.inactive,
+      ];
+
       apiSubscriptions.forEach((subscription: Subscription) => {
         // Avoid duplicates by checking if we already have this subscription
         const exists = processedSubscriptions.find(
-          sub => sub.contractId === subscription._id
+          (sub) => sub.contractId === subscription._id
         );
-        
+
         if (!exists) {
-          let displayName = "";
+          // ✅ Use the exact plan name the user purchased
+          let displayName = subscription.planName || "Unknown Subscription";
           let icon = User;
           let color = "bg-blue-500";
 
-          switch (subscription.planCategory?.toLowerCase()) {
+          // Set icon and color based on plan category, but keep the exact plan name
+          const category = subscription.planCategory?.toLowerCase();
+          switch (category) {
             case "diamond":
-              displayName = "Diamond Subscription";
               icon = Crown;
               color = "bg-purple-500";
               break;
             case "infinity":
-              displayName = "Infinity Subscription";
               icon = Infinity;
               color = "bg-blue-500";
               break;
             case "basic":
-              displayName = "Basic Subscription";
               icon = User;
               color = "bg-green-500";
               break;
             default:
-              displayName = subscription.planName || "Unknown Subscription";
+              // Try to determine icon/color from plan name if category is not available
+              const nameLower = displayName.toLowerCase();
+              if (nameLower.includes("diamond")) {
+                icon = Crown;
+                color = "bg-purple-500";
+              } else if (nameLower.includes("infinity")) {
+                icon = Infinity;
+                color = "bg-blue-500";
+              } else if (nameLower.includes("basic")) {
+                icon = User;
+                color = "bg-green-500";
+              }
           }
 
           processedSubscriptions.push({
@@ -153,7 +167,7 @@ export default function SubscriptionPage() {
             startDate: subscription.startDate,
             endDate: subscription.endDate || new Date().toISOString(),
             productType: subscription.planCategory?.toLowerCase() || "unknown",
-            displayName,
+            displayName, // ✅ This now shows the exact product name purchased
             icon,
             color,
             contractId: subscription._id,
@@ -231,9 +245,7 @@ export default function SubscriptionPage() {
                   </p>
                 </div>
                 <div className="flex gap-3 justify-center pt-4">
-                  <Button onClick={() => refetch()}>
-                    Try Again
-                  </Button>
+                  <Button onClick={() => refetch()}>Try Again</Button>
                   <Button variant="outline" onClick={() => router.push("/hub")}>
                     Back to Hub
                   </Button>
@@ -286,7 +298,7 @@ export default function SubscriptionPage() {
         {/* Current Subscription Status from API */}
         {subscriptionStatus && (
           <div className="mb-6">
-            <SubscriptionStatusCard 
+            <SubscriptionStatusCard
               subscriptionStatus={subscriptionStatus}
               onRefresh={refetch}
               isRefreshing={subscriptionLoading}

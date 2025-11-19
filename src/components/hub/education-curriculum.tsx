@@ -11,14 +11,21 @@ import {
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
 import { Lock, PlayCircle, ChevronDown, BookOpen } from "lucide-react";
-import { mockUser, academyCurriculum, infinityCurriculum } from "@/lib/data/infinity.data";
+import {
+  mockUser,
+  academyCurriculum,
+  infinityCurriculum,
+} from "@/lib/data/infinity.data";
 import { VideoPlayer } from "@/components/hub/video-player";
 import { cn } from "@/lib/utils";
 import type { AcademyCategory, InfinityCategory } from "@/lib/infinityTypes";
 
 export function EducationCurriculum() {
   const user = mockUser;
-  const hasInfinityAccess = user.subscription === "Infinity";
+  // ✅ Use case-insensitive matching for exact product names
+  const hasInfinityAccess = (user.subscription || "")
+    .toLowerCase()
+    .includes("infinity");
   const [openSections, setOpenSections] = useState<Record<string, boolean>>({});
 
   const toggleSection = (id: string) => {

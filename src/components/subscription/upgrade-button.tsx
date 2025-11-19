@@ -26,7 +26,10 @@ import {
 import { useAuth } from "@/context/authContext";
 import { toast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
-import { formatPriceWithPeriod, getPricingInfo } from "@/lib/config/pricing.config";
+import {
+  formatPriceWithPeriod,
+  getPricingInfo,
+} from "@/lib/config/pricing.config";
 
 interface UpgradeButtonProps {
   targetPackage: "diamond" | "infinity";
@@ -101,15 +104,18 @@ export function UpgradeButton({
   useEffect(() => {
     const loadPricing = async () => {
       try {
-        const pricing = await getPricingInfo(targetPackage, 'monthly');
+        const pricing = await getPricingInfo(targetPackage, "monthly");
         if (pricing.price && pricing.price > 0) {
-          const formattedPrice = formatPriceWithPeriod(pricing.price, 'monthly');
+          const formattedPrice = formatPriceWithPeriod(
+            pricing.price,
+            "monthly"
+          );
           setDynamicPrice(formattedPrice);
         } else {
           setDynamicPrice("Contact Us");
         }
       } catch (error) {
-        console.error('Error loading dynamic pricing:', error);
+        console.error("Error loading dynamic pricing:", error);
         // Keep the static price as fallback
         setDynamicPrice(packageInfo.price);
       }
@@ -212,6 +218,20 @@ export function UpgradeButton({
       return;
     }
 
+    console.log("🗑️ Clearing previous cart and discount data for upgrade...");
+
+    // ✅ Clear previous cart data (removing old subscription)
+    localStorage.removeItem("cart");
+
+    // ✅ Clear any previous discount data (important when switching subscriptions)
+    localStorage.removeItem("checkout_discount");
+
+    // ✅ Clear discount cookies if they exist
+    document.cookie =
+      "discount_code=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+    document.cookie =
+      "discount_data=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+
     // Create cart item for this upgrade
     const priceToUse = dynamicPrice || packageInfo.price;
     const cartItem = {
@@ -223,8 +243,10 @@ export function UpgradeButton({
       features: packageInfo.features,
     };
 
-    // Store in localStorage
+    // Store new cart in localStorage (replaces old cart)
     localStorage.setItem("cart", JSON.stringify([cartItem]));
+
+    console.log("✅ Cart updated with upgrade:", cartItem);
 
     toast({
       title: "Added to cart!",
@@ -264,7 +286,9 @@ export function UpgradeButton({
           <Card>
             <CardHeader>
               <CardTitle className="text-center">
-                <span className="text-3xl font-bold">{dynamicPrice || packageInfo.price}</span>
+                <span className="text-3xl font-bold">
+                  {dynamicPrice || packageInfo.price}
+                </span>
                 <span className="text-sm font-normal text-muted-foreground ml-2">
                   monthly
                 </span>
