@@ -7,15 +7,11 @@ import { Loader2, CreditCard, CheckCircle, XCircle } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { PaymentInfoDisplay } from "@/components/payments/payment-info-display";
 import Cookies from "js-cookie";
+import publicPaymentService from "@/lib/services/public-payment.service";
 
-// PayPal Configuration - Use environment variables
-const PAYPAL_MODE = process.env.NEXT_PUBLIC_PAYPAL_MODE || "live";
-const PAYPAL_CLIENT_ID = process.env.NEXT_PUBLIC_PAYPAL_CLIENT_ID || "";
-const PAYPAL_CLIENT_SECRET = process.env.PAYPAL_CLIENT_SECRET || "";
-const PAYPAL_API = process.env.PAYPAL_API || "https://api.paypal.com";
-const PAYPAL_SDK_URL =
-  process.env.NEXT_PUBLIC_PAYPAL_SDK_URL || "https://www.paypal.com/sdk/js";
+// API Configuration
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "https://eagleinvest.us/api";
+const PAYPAL_SDK_URL = "https://www.paypal.com/sdk/js";
 
 // Extend the global Window interface
 declare global {
@@ -55,6 +51,10 @@ export function PayPalPayment({
     "idle" | "processing" | "success" | "error"
   >("idle");
   const [isMounted, setIsMounted] = useState(false);
+  const [paypalConfig, setPaypalConfig] = useState<{
+    clientId: string;
+    mode: string;
+  } | null>(null);
 
   // Ref callback to capture the container element when it mounts
   const paypalRef = (node: HTMLDivElement | null) => {
@@ -72,8 +72,8 @@ export function PayPalPayment({
   };
 
   // Load PayPal SDK
-  const loadPayPalScript = (): Promise<void> => {
-    return new Promise((resolve, reject) => {
+  const loadPayPalScript = async (): Promise<void> => {
+    return new Promise(async (resolve, reject) => {
       // If already loaded, resolve immediately
       if (isPayPalLoaded()) {
         console.log("PayPal SDK already loaded");
@@ -99,83 +99,129 @@ export function PayPalPayment({
         return;
       }
 
-      // Validate environment variables - use constants with fallback
-      const clientId = PAYPAL_CLIENT_ID;
-      const sdkBaseUrl = PAYPAL_SDK_URL;
+      try {
+        // Get dynamic PayPal configuration
+        const settings = await publicPaymentService.getPublicSettings();
+        const clientId = settings.paypal.clientId;
+        const sdkBaseUrl = PAYPAL_SDK_URL;
 
-      console.log("🔧 PayPal SDK Configuration:");
-      console.log(
-        "  - Client ID:",
-        clientId ? `${clientId.substring(0, 10)}...` : "MISSING"
-      );
-      console.log("  - SDK Base URL:", sdkBaseUrl);
-      console.log("  - Mode:", PAYPAL_MODE);
-      console.log("  - API URL:", PAYPAL_API);
+        if (!clientId) {
+          reject(new Error("PayPal not configured in backend"));
+          return;
+        }
 
-      console.log("✅ Loading PayPal SDK...");
+        console.log("🔧 PayPal SDK Configuration (Dynamic):");
+        console.log(
+          "  - Client ID:",
+          clientId ? `${clientId.substring(0, 10)}...` : "MISSING"
+        );
+        console.log("  - SDK Base URL:", sdkBaseUrl);
+        console.log("  - Mode:", settings.paypal.mode);
+        console.log("  - Enabled:", settings.paypal.enabled);
 
-      // Add preconnect for faster loading
-      const preconnect = document.createElement("link");
-      preconnect.rel = "preconnect";
-      preconnect.href = sdkBaseUrl.replace("/sdk/js", "");
-      document.head.appendChild(preconnect);
+        console.log("✅ Loading PayPal SDK...");
 
-      const script = document.createElement("script");
-      const sdkUrl = `${sdkBaseUrl}?client-id=${clientId}&currency=USD&intent=capture&disable-funding=credit,card`;
+        // Add preconnect for faster loading
+        const preconnect = document.createElement("link");
+        preconnect.rel = "preconnect";
+        preconnect.href = sdkBaseUrl.replace("/sdk/js", "");
+        document.head.appendChild(preconnect);
 
-      console.log(
-        "📡 Loading from:",
-        sdkUrl.replace(clientId, `${clientId.substring(0, 10)}...`)
-      );
+        const script = document.createElement("script");
+        const sdkUrl = `${sdkBaseUrl}?client-id=${clientId}&currency=USD&intent=capture&disable-funding=credit,card`;
 
-      script.src = sdkUrl;
-      script.async = true;
-      script.setAttribute("data-sdk-integration-source", "button-factory");
-
-      const loadTimeout = setTimeout(() => {
-        console.error("⏱️ PayPal SDK loading timeout (10s exceeded)");
-        reject(new Error("PayPal SDK loading timeout"));
-      }, 10000);
-
-      script.onload = () => {
-        console.log("✅ PayPal SDK loaded successfully");
-        clearTimeout(loadTimeout);
-        setScriptLoaded(true);
-        resolve();
-      };
-
-      script.onerror = (error) => {
-        console.error("❌ PayPal SDK script error:", error);
-        console.error("🔍 Possible causes:");
-        console.error("  1. Invalid PayPal Client ID");
-        console.error("  2. Network connectivity issues");
-        console.error("  3. PayPal service is down");
-        console.error("  4. CORS or browser security blocking the script");
-        console.error(
-          "🔗 Script URL:",
+        console.log(
+          "📡 Loading from:",
           sdkUrl.replace(clientId, `${clientId.substring(0, 10)}...`)
         );
-        clearTimeout(loadTimeout);
-        reject(new Error("Failed to load PayPal SDK"));
-      };
 
-      document.head.appendChild(script);
-      console.log("📝 PayPal script element added to document head");
+        script.src = sdkUrl;
+        script.async = true;
+        script.setAttribute("data-sdk-integration-source", "button-factory");
+
+        const loadTimeout = setTimeout(() => {
+          console.error("⏱️ PayPal SDK loading timeout (10s exceeded)");
+          reject(new Error("PayPal SDK loading timeout"));
+        }, 10000);
+
+        script.onload = () => {
+          console.log("✅ PayPal SDK loaded successfully");
+          clearTimeout(loadTimeout);
+          setScriptLoaded(true);
+          resolve();
+        };
+
+        script.onerror = (error) => {
+          console.error("❌ PayPal SDK script error:", error);
+          console.error("🔍 Possible causes:");
+          console.error("  1. Invalid PayPal Client ID");
+          console.error("  2. Network connectivity issues");
+          console.error("  3. PayPal service is down");
+          console.error("  4. CORS or browser security blocking the script");
+          console.error(
+            "🔗 Script URL:",
+            sdkUrl.replace(clientId, `${clientId.substring(0, 10)}...`)
+          );
+          clearTimeout(loadTimeout);
+          reject(new Error("Failed to load PayPal SDK"));
+        };
+
+        document.head.appendChild(script);
+        console.log("📝 PayPal script element added to document head");
+      } catch (error: any) {
+        console.error("❌ Error loading PayPal config:", error);
+        reject(
+          new Error(error.message || "Failed to load PayPal configuration")
+        );
+      }
     });
   };
+
+  // Fetch PayPal configuration from API
+  useEffect(() => {
+    const fetchConfig = async () => {
+      try {
+        console.log("🔄 Fetching PayPal configuration from API...");
+        const settings = await publicPaymentService.getPublicSettings();
+
+        if (!settings.paypal.enabled) {
+          throw new Error("PayPal payment is currently disabled");
+        }
+
+        if (!settings.paypal.clientId) {
+          throw new Error("PayPal client ID not configured");
+        }
+
+        setPaypalConfig({
+          clientId: settings.paypal.clientId,
+          mode: settings.paypal.mode,
+        });
+
+        console.log("✅ PayPal configuration loaded:", {
+          mode: settings.paypal.mode,
+          enabled: settings.paypal.enabled,
+        });
+      } catch (error: any) {
+        console.error("❌ Failed to fetch PayPal config:", error);
+        onPaymentError(error.message || "Failed to load PayPal configuration");
+      }
+    };
+
+    fetchConfig();
+  }, []);
 
   // Ensure component is mounted (client-side only) and preload SDK
   useEffect(() => {
     setIsMounted(true);
 
-    // Start loading PayPal SDK immediately to reduce wait time
-    if (typeof window !== "undefined" && !isPayPalLoaded()) {
+    // Start loading PayPal SDK immediately to reduce wait time (only if config is loaded)
+    if (typeof window !== "undefined" && !isPayPalLoaded() && paypalConfig) {
       console.log("🚀 Preloading PayPal SDK...");
       loadPayPalScript().catch((err) => {
         console.error("Preload failed:", err);
       });
     }
-  }, []);
+  }, [paypalConfig]);
 
   // Initialize PayPal buttons
   const initializePayPal = async () => {
@@ -407,17 +453,21 @@ export function PayPalPayment({
       return;
     }
 
-    // Validation - use constant with fallback
-    const clientId = PAYPAL_CLIENT_ID;
+    // Wait for PayPal configuration to be loaded
+    if (!paypalConfig) {
+      console.log("⏳ Waiting for PayPal configuration from API...");
+      return;
+    }
+
+    // Validation
     const amountValue = parseFloat(amount);
 
-    console.log("🚀 PayPal Component Initialization");
+    console.log("🚀 PayPal Component Initialization (Dynamic Config)");
     console.log("  - Contract ID:", contractId);
     console.log("  - Amount:", amount);
     console.log("  - Amount (parsed):", amountValue);
     console.log("  - Client ID configured: ✅ Yes");
-    console.log("  - Mode:", PAYPAL_MODE);
-    console.log("  - API URL:", PAYPAL_API);
+    console.log("  - Mode:", paypalConfig.mode);
     console.log("  - Backend API URL:", API_URL);
     console.log("  - isMounted:", isMounted);
     console.log("  - Container available: ✅ Yes");
@@ -475,7 +525,7 @@ export function PayPalPayment({
       setPaymentStatus("idle");
       setIsInitializing(false);
     };
-  }, [contractId, amount, isMounted, paypalContainer]); // Re-run when contractId, amount, or isMounted changes
+  }, [contractId, amount, isMounted, paypalContainer, paypalConfig]); // Re-run when config changes
 
   // Render container div early (hidden) so ref attaches immediately
   const paypalContainerDiv = (

@@ -13,11 +13,22 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Loader2, CreditCard, CheckCircle, Shield, Lock } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import Cookies from "js-cookie";
+import publicPaymentService from "@/lib/services/public-payment.service";
 
-// Initialize Stripe
-const stripePromise = loadStripe(
-  process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!
-);
+// Initialize Stripe dynamically
+let stripePromise: Promise<any> | null = null;
+
+const getStripePromise = async () => {
+  if (!stripePromise) {
+    const publishableKey = await publicPaymentService.getStripePublishableKey();
+    if (!publishableKey) {
+      throw new Error("Stripe not configured in backend");
+    }
+    console.log("✅ Loading Stripe with dynamic publishable key");
+    stripePromise = loadStripe(publishableKey);
+  }
+  return stripePromise;
+};
 
 interface StripePaymentProps {
   contractId: string;
@@ -358,14 +369,54 @@ function PaymentForm({
 // Main component that wraps the form with Elements provider
 export function StripeElementsPayment(props: StripePaymentProps) {
   const [stripeError, setStripeError] = useState<string | null>(null);
+  const [stripeLoading, setStripeLoading] = useState(true);
+  const [stripe, setStripe] = useState<any>(null);
 
   useEffect(() => {
-    // Validate Stripe configuration
-    if (!process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY) {
-      setStripeError("Stripe configuration missing");
-      return;
-    }
+    // Load Stripe configuration dynamically from backend
+    const initStripe = async () => {
+      try {
+        console.log("🔄 Fetching Stripe configuration from API...");
+        const settings = await publicPaymentService.getPublicSettings();
+
+        if (!settings.stripe.enabled) {
+          throw new Error("Stripe payment is currently disabled");
+        }
+
+        if (!settings.stripe.publishableKey) {
+          throw new Error("Stripe publishable key not configured");
+        }
+
+        console.log("✅ Stripe configuration loaded:", {
+          mode: settings.stripe.mode,
+          enabled: settings.stripe.enabled,
+        });
+
+        const stripeInstance = await getStripePromise();
+        setStripe(stripeInstance);
+        setStripeLoading(false);
+      } catch (error: any) {
+        console.error("❌ Failed to load Stripe:", error);
+        setStripeError(error.message || "Failed to load Stripe configuration");
+        setStripeLoading(false);
+      }
+    };
+
+    initStripe();
   }, []);
+
+  if (stripeLoading) {
+    return (
+      <Card>
+        <CardContent className="p-6">
+          <div className="flex items-center justify-center space-x-2">
+            <Loader2 className="h-5 w-5 animate-spin" />
+            <span>Loading Stripe payment system...</span>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
 
   if (stripeError) {
     return (
@@ -380,7 +431,7 @@ export function StripeElementsPayment(props: StripePaymentProps) {
   }
 
   return (
-    <Elements stripe={stripePromise}>
+    <Elements stripe={stripe}>
       <PaymentForm {...props} />
     </Elements>
   );
