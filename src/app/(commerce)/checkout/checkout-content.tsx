@@ -485,16 +485,16 @@ export default function CheckoutContent() {
 
     // Return discounted total if discount is applied, otherwise return subtotal
     // For 100% discount, discountedTotal will be 0, which should be returned
-    const finalPrice =
-      discountedTotal !== null && appliedDiscountAmount > 0
-        ? discountedTotal
-        : subtotal;
+    // Check if discount is applied (discountedTotal can be 0 for 100% discount)
+    const hasDiscount = discountedTotal !== null && appliedDiscountAmount > 0;
+    const finalPrice = hasDiscount ? discountedTotal : subtotal;
+
     console.log("💵 Final Price Calculation:", {
       subtotal,
       discountedTotal,
-      finalPrice,
       appliedDiscountAmount,
-      willUseDiscount: appliedDiscountAmount > 0,
+      hasDiscount,
+      finalPrice,
       is100PercentDiscount: discountedTotal === 0 && appliedDiscountAmount > 0,
     });
     return finalPrice;
@@ -584,25 +584,63 @@ export default function CheckoutContent() {
       calculation: `${getSubtotal(
         useMemberPrice
       )} - ${discountAmount} = ${finalAmount}`,
+      is100PercentOff: finalAmount === 0,
     });
-    setAppliedDiscountAmount(discountAmount);
-    setDiscountedTotal(finalAmount);
+
+    // Ensure values are numbers
+    const numericDiscountAmount = Number(discountAmount);
+    let numericFinalAmount = Number(finalAmount);
+
+    // IMPORTANT FIX: Recalculate finalAmount based on subtotal and discount
+    // This fixes the issue where backend might return incorrect finalAmount
+    const currentSubtotal = getSubtotal(useMemberPrice);
+    const calculatedFinalAmount = Math.max(
+      0,
+      currentSubtotal - numericDiscountAmount
+    );
+
+    // Use the calculated amount if it differs from what was passed
+    if (numericFinalAmount !== calculatedFinalAmount) {
+      console.log("⚠️ Correcting finalAmount:", {
+        receivedFinalAmount: numericFinalAmount,
+        calculatedFinalAmount,
+        subtotal: currentSubtotal,
+        discount: numericDiscountAmount,
+      });
+      numericFinalAmount = calculatedFinalAmount;
+    }
+
+    console.log("🔢 Setting state with numeric values:", {
+      numericDiscountAmount,
+      numericFinalAmount,
+      is100PercentDiscount: numericFinalAmount === 0,
+    });
+
+    setAppliedDiscountAmount(numericDiscountAmount);
+    setDiscountedTotal(numericFinalAmount);
     if (discountCode) {
       setAppliedDiscountCode(discountCode);
     }
 
+    console.log("✅ STATE UPDATED:", {
+      appliedDiscountAmount: numericDiscountAmount,
+      discountedTotal: numericFinalAmount,
+      appliedDiscountCode: discountCode,
+      is100PercentOff: numericFinalAmount === 0,
+    });
+
     // Save to localStorage for persistence across step navigation
     const discountData = {
       code: discountCode || "",
-      amount: discountAmount,
-      total: finalAmount,
+      amount: numericDiscountAmount,
+      total: numericFinalAmount,
       timestamp: Date.now(),
     };
     localStorage.setItem("checkout_discount", JSON.stringify(discountData));
     console.log("💾 Saved discount to localStorage:", discountData);
     console.log(
       "✅ After discount applied - getTotalPrice will now return:",
-      finalAmount
+      numericFinalAmount
     );
   };
 
@@ -1490,11 +1528,7 @@ export default function CheckoutContent() {
                               : "text-white"
                           }`}
                         >
-                          $
-                          {Math.max(
-                            0,
-                            getTotalPrice(useMemberPrice)
-                          ).toLocaleString()}
+                          ${getTotalPrice(useMemberPrice).toLocaleString()}
                           {getTotalPrice(useMemberPrice) === 0 && (
                             <Badge className="ml-2 bg-green-500/20 text-green-400">
                               FREE
@@ -1502,6 +1536,11 @@ export default function CheckoutContent() {
                           )}
                         </span>
                       </div>
+                      {getTotalPrice(useMemberPrice) === 0 && (
+                        <div className="text-sm text-green-400 text-right mt-1">
+                          You save ${appliedDiscountAmount.toLocaleString()}!
+                        </div>
+                      )}
                     </>
                   )}
                 </div>

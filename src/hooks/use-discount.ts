@@ -189,7 +189,10 @@ export const useDiscount = (initialOrderAmount = 0): UseDiscountReturn => {
   // Calculated values
   const hasValidDiscount = appliedDiscount !== null;
   const discountAmount = appliedDiscount?.calculation.discountAmount || 0;
-  const finalAmount = appliedDiscount?.calculation.finalAmount || initialOrderAmount;
+  // IMPORTANT FIX: Recalculate finalAmount to ensure correct value (backend may return incorrect value)
+  const finalAmount = appliedDiscount
+    ? Math.max(0, appliedDiscount.calculation.originalAmount - appliedDiscount.calculation.discountAmount)
+    : initialOrderAmount;
   const savingsPercentage = appliedDiscount?.calculation.savingsPercentage || 0;
 
   return {

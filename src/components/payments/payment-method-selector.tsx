@@ -31,7 +31,7 @@ export function PaymentMethodSelector({
   discountCode,
   discountAmount,
 }: PaymentMethodSelectorProps) {
-  // Start with no method selected so users can choose
+  // All transactions require payment method selection
   const [selectedMethod, setSelectedMethod] = useState<PaymentMethod>(null);
 
   const handlePaymentSuccess = (paymentData: any) => {

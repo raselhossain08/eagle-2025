@@ -44,6 +44,8 @@ export function PayPalPayment({
   // Check PayPal minimum amount requirement ($1.00)
   const paymentAmount = parseFloat(amount);
   const isAmountTooLow = paymentAmount < 1.0 && paymentAmount > 0;
+  // Free order logic removed - all transactions must go through payment gateway
+  const isFreeOrder = false;
 
   const [paypalContainer, setPaypalContainer] = useState<HTMLDivElement | null>(
     null
@@ -286,6 +288,72 @@ export function PayPalPayment({
 
             console.log("Creating PayPal order...");
 
+            // Calculate final amount with discount
+            let finalAmount = parseFloat(amount);
+            console.log("💰 PAYPAL AMOUNT DEBUG:");
+            console.log("  Original amount prop:", amount);
+            console.log("  Parsed amount:", finalAmount);
+            console.log("  Discount code:", discountCode);
+            console.log("  Discount amount:", discountAmount);
+
+            // Apply discount if provided
+            if (discountCode && discountAmount && discountAmount > 0) {
+              const originalAmount = finalAmount;
+              if (originalAmount >= discountAmount) {
+                finalAmount = Math.max(0, originalAmount - discountAmount);
+                console.log("🔧 DISCOUNT APPLIED IN PAYPAL:");
+                console.log("  Original:", originalAmount);
+                console.log("  Discount:", discountAmount);
+                console.log("  Final:", finalAmount);
+              }
+            }
+
+            // HANDLE FREE ORDERS (100% DISCOUNT)
+            if (finalAmount === 0) {
+              console.log(
+                "🎉 FREE ORDER DETECTED - Completing without PayPal payment"
+              );
+
+              const freeOrderResponse = await fetch(
+                `${API_URL}/paypal/contracts/complete-free-order`,
+                {
+                  method: "POST",
+                  headers: {
+                    "Content-Type": "application/json",
+                    ...(token && { Authorization: `Bearer ${token}` }),
+                  },
+                  body: JSON.stringify({
+                    contractId,
+                    subscriptionType,
+                    discountCode,
+                    discountAmount,
+                    productName,
+                  }),
+                }
+              );
+
+              const freeOrderData = await freeOrderResponse.json();
+              console.log("✅ Free order response:", freeOrderData);
+
+              if (!freeOrderResponse.ok) {
+                throw new Error(
+                  freeOrderData.message || "Failed to complete free order"
+                );
+              }
+
+              setPaymentStatus("success");
+              onPaymentSuccess({
+                type: "free_order",
+                contractId,
+                discountCode,
+                amount: 0,
+                transactionId: freeOrderData.transactionId,
+              });
+
+              // Return a fake order ID to prevent PayPal SDK errors
+              return "FREE_ORDER_COMPLETED";
+            }
+
             const response = await fetch(
               `${API_URL}/paypal/contracts/create-order`,
               {
@@ -297,7 +365,7 @@ export function PayPalPayment({
                 body: JSON.stringify({
                   contractId,
                   subscriptionType,
-                  amount,
+                  amount: finalAmount,
                   ...(discountCode && { discountCode }),
                   ...(discountAmount && { discountAmount }),
                 }),
@@ -337,6 +405,15 @@ export function PayPalPayment({
 
             console.log("Capturing PayPal payment:", data.orderID);
 
+            // Calculate final amount with discount (same as in createOrder)
+            let finalAmount = parseFloat(amount);
+            if (discountCode && discountAmount && discountAmount > 0) {
+              const originalAmount = finalAmount;
+              if (originalAmount >= discountAmount) {
+                finalAmount = Math.max(0, originalAmount - discountAmount);
+              }
+            }
+
             const response = await fetch(
               `${API_URL}/paypal/contracts/capture-order/${data.orderID}`,
               {
@@ -348,7 +425,7 @@ export function PayPalPayment({
                 body: JSON.stringify({
                   contractId,
                   subscriptionType,
-                  amount,
+                  amount: finalAmount,
                   ...(discountCode && { discountCode }),
                   ...(discountAmount && { discountAmount }),
                 }),
@@ -606,6 +683,185 @@ export function PayPalPayment({
       ? parseFloat(amount) + discountAmount
       : undefined,
   });
+
+  // Handle free orders (100% discount)
+  if (isFreeOrder) {
+    const handleFreeOrder = async () => {
+      setIsLoading(true);
+      setPaymentStatus("processing");
+
+      try {
+        const token = Cookies.get("token");
+        const freeTransactionId = `free_${Date.now()}_${Math.random()
+          .toString(36)
+          .substring(7)}`;
+
+        console.log(
+          "🎁 Processing 100% discounted order via PayPal - bypassing PayPal payment"
+        );
+
+        const confirmResponse = await fetch(
+          `${API_URL}/paypal/contracts/confirm-payment`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              ...(token && { Authorization: `Bearer ${token}` }),
+            },
+            body: JSON.stringify({
+              paymentIntentId: freeTransactionId,
+              contractId,
+              discountCode,
+              discountAmount,
+              finalAmount: 0,
+              paymentMethod: "paypal",
+              isFreeOrder: true,
+            }),
+          }
+        );
+
+        const confirmData = await confirmResponse.json();
+        console.log("✅ Free order confirmation response:", confirmData);
+
+        if (!confirmResponse.ok) {
+          throw new Error(
+            confirmData.message || "Failed to process free order"
+          );
+        }
+
+        const paymentData = {
+          paymentProvider: "paypal",
+          paymentId: freeTransactionId,
+          orderId: freeTransactionId,
+          contractId,
+          amount: "0.00",
+          transactionId: freeTransactionId,
+          contract: confirmData.contract,
+          isFreeOrder: true,
+          discountCode,
+          discountAmount,
+        };
+
+        setPaymentStatus("success");
+        console.log("🎉 Free order completed successfully!", paymentData);
+
+        toast({
+          title: "Order Completed",
+          description: "Your free order has been processed successfully!",
+        });
+
+        onPaymentSuccess(paymentData);
+      } catch (error: any) {
+        console.error("❌ Free order processing error:", error);
+        setPaymentStatus("error");
+        onPaymentError(error.message || "Failed to process free order");
+
+        toast({
+          title: "Order Processing Failed",
+          description: error.message || "Failed to process your free order",
+          variant: "destructive",
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    return (
+      <div className="space-y-6">
+        {/* Payment Information Display */}
+        <PaymentInfoDisplay
+          productName={productName}
+          amount={0}
+          subscriptionType={subscriptionType}
+          discountCode={discountCode}
+          discountAmount={discountAmount}
+          originalAmount={discountAmount ? discountAmount : undefined}
+          businessInfo={{
+            name: process.env.NEXT_PUBLIC_BUSINESS_NAME || "Eagle Investors",
+            supportEmail:
+              process.env.NEXT_PUBLIC_CONTACT_EMAIL ||
+              "info@eagle-investors.com",
+            website: "https://eagle-investors.com",
+            phone: process.env.NEXT_PUBLIC_BUSINESS_PHONE || "+1-555-EAGLE-01",
+          }}
+        />
+
+        <Card className="bg-green-500/10 border-green-500/30">
+          <CardContent className="p-6">
+            <div className="space-y-4">
+              <div className="flex items-start space-x-3">
+                <CheckCircle className="w-6 h-6 text-green-400 flex-shrink-0 mt-0.5" />
+                <div className="space-y-2">
+                  <h3 className="text-lg font-semibold text-green-400">
+                    Free Order - 100% Discount Applied!
+                  </h3>
+                  <p className="text-gray-300">
+                    Your order is completely free thanks to the discount code
+                    you applied.
+                  </p>
+                  <p className="text-gray-400 text-sm">
+                    Click the button below to complete your free order and get
+                    instant access.
+                  </p>
+                </div>
+              </div>
+
+              {paymentStatus === "processing" && (
+                <div className="flex items-center justify-center space-x-2 p-4 bg-blue-500/10 border border-blue-500/30 rounded-lg">
+                  <Loader2 className="w-5 h-5 animate-spin text-blue-400" />
+                  <span className="text-blue-400">
+                    Processing your free order...
+                  </span>
+                </div>
+              )}
+
+              {paymentStatus === "success" && (
+                <div className="p-4 bg-green-500/10 border border-green-500/30 rounded-lg">
+                  <div className="flex items-center space-x-2">
+                    <CheckCircle className="w-5 h-5 text-green-400" />
+                    <span className="text-green-400">
+                      Order completed successfully!
+                    </span>
+                  </div>
+                </div>
+              )}
+
+              {paymentStatus === "error" && (
+                <div className="p-4 bg-red-500/10 border border-red-500/30 rounded-lg">
+                  <div className="flex items-center space-x-2">
+                    <XCircle className="w-5 h-5 text-red-400" />
+                    <span className="text-red-400">
+                      Failed to process order. Please try again.
+                    </span>
+                  </div>
+                </div>
+              )}
+
+              <Button
+                onClick={handleFreeOrder}
+                disabled={isLoading || paymentStatus === "success"}
+                className="w-full bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-semibold py-3"
+              >
+                {isLoading ? (
+                  <>
+                    <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                    Processing...
+                  </>
+                ) : paymentStatus === "success" ? (
+                  <>
+                    <CheckCircle className="mr-2 h-5 w-5" />
+                    Order Completed
+                  </>
+                ) : (
+                  "Complete Free Order"
+                )}
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   // Show error if amount is below PayPal minimum
   if (isAmountTooLow) {
