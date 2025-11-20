@@ -238,6 +238,16 @@ function PaymentForm({
 
       // Confirm with backend
       console.log("🔄 Confirming payment with backend...");
+      console.log("💰 SENDING TO BACKEND:", {
+        paymentIntentId,
+        contractId,
+        discountCode,
+        discountAmount,
+        amount: Math.round(finalAmount * 100), // Send in cents
+        amountInDollars: finalAmount,
+        note: "Frontend sends amount in cents to backend",
+      });
+
       const confirmResponse = await fetch(
         `${process.env.NEXT_PUBLIC_API_URL}/paypal/contracts/confirm-payment`,
         {
@@ -251,7 +261,7 @@ function PaymentForm({
             contractId,
             discountCode,
             discountAmount,
-            finalAmount: parseFloat(amount),
+            amount: Math.round(finalAmount * 100), // Send in cents (Stripe standard)
           }),
         }
       );

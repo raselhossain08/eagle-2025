@@ -287,6 +287,14 @@ export function PayPalPayment({
             console.log("🔑 Token status:", token ? "Available" : "Guest mode");
 
             console.log("Creating PayPal order...");
+            console.log("🔍 PayPal Order Creation Debug:", {
+              contractId,
+              subscriptionType,
+              amount,
+              discountCode,
+              discountAmount,
+              hasToken: !!token,
+            });
 
             // Calculate final amount with discount
             let finalAmount = parseFloat(amount);
