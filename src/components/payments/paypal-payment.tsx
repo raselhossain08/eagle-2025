@@ -41,6 +41,10 @@ export function PayPalPayment({
   discountCode,
   discountAmount,
 }: PayPalPaymentProps) {
+  // Check PayPal minimum amount requirement ($1.00)
+  const paymentAmount = parseFloat(amount);
+  const isAmountTooLow = paymentAmount < 1.0 && paymentAmount > 0;
+
   const [paypalContainer, setPaypalContainer] = useState<HTMLDivElement | null>(
     null
   );
@@ -602,6 +606,55 @@ export function PayPalPayment({
       ? parseFloat(amount) + discountAmount
       : undefined,
   });
+
+  // Show error if amount is below PayPal minimum
+  if (isAmountTooLow) {
+    return (
+      <div className="space-y-6">
+        {/* Payment Information Display */}
+        <PaymentInfoDisplay
+          productName={productName}
+          amount={parseFloat(amount) || 0}
+          subscriptionType={subscriptionType}
+          discountCode={discountCode}
+          discountAmount={discountAmount}
+          originalAmount={
+            discountAmount ? parseFloat(amount) + discountAmount : undefined
+          }
+          businessInfo={{
+            name: process.env.NEXT_PUBLIC_BUSINESS_NAME || "Eagle Investors",
+            supportEmail:
+              process.env.NEXT_PUBLIC_CONTACT_EMAIL ||
+              "info@eagle-investors.com",
+            website: "https://eagle-investors.com",
+            phone: process.env.NEXT_PUBLIC_BUSINESS_PHONE || "+1-555-EAGLE-01",
+          }}
+        />
+
+        <Card className="bg-red-500/10 border-red-500/30">
+          <CardContent className="p-6">
+            <div className="flex items-start space-x-3">
+              <XCircle className="w-6 h-6 text-red-400 flex-shrink-0 mt-0.5" />
+              <div className="space-y-2">
+                <h3 className="text-lg font-semibold text-red-400">
+                  PayPal Not Available
+                </h3>
+                <p className="text-gray-300">
+                  PayPal requires a minimum payment amount of{" "}
+                  <strong>$1.00</strong>. Your current total is{" "}
+                  <strong>${paymentAmount.toFixed(2)}</strong>.
+                </p>
+                <p className="text-gray-400 text-sm">
+                  Please use a credit card payment method instead, or adjust
+                  your order to meet the minimum requirement.
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">

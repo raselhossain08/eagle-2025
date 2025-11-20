@@ -580,6 +580,10 @@ export default function CheckoutContent() {
       discountCode,
       discountAmountType: typeof discountAmount,
       finalAmountType: typeof finalAmount,
+      currentSubtotal: getSubtotal(useMemberPrice),
+      calculation: `${getSubtotal(
+        useMemberPrice
+      )} - ${discountAmount} = ${finalAmount}`,
     });
     setAppliedDiscountAmount(discountAmount);
     setDiscountedTotal(finalAmount);
@@ -596,6 +600,10 @@ export default function CheckoutContent() {
     };
     localStorage.setItem("checkout_discount", JSON.stringify(discountData));
     console.log("💾 Saved discount to localStorage:", discountData);
+    console.log(
+      "✅ After discount applied - getTotalPrice will now return:",
+      finalAmount
+    );
   };
 
   // Handle discount removal
@@ -1093,7 +1101,10 @@ export default function CheckoutContent() {
       console.log("💳 Processing payment success...", paymentData);
 
       // IMPORTANT: Capture the final amount and discount info BEFORE clearing discount state
-      const finalPaymentAmount = getTotalPrice(useMemberPrice);
+      // Stripe expects amount in cents, so multiply by 100
+      const finalPaymentAmount = Math.round(
+        getTotalPrice(useMemberPrice) * 100
+      );
       const capturedDiscountAmount = appliedDiscountAmount;
       const capturedDiscountCode = appliedDiscountCode;
       const capturedOriginalAmount = getSubtotal(useMemberPrice);
@@ -1107,9 +1118,9 @@ export default function CheckoutContent() {
       });
 
       console.log("🔍 EXACT AMOUNT BEING SENT TO TRANSACTION:", {
-        amountInDollars: finalPaymentAmount,
-        amountWillBeConvertedToCents: finalPaymentAmount * 100,
-        note: "Backend multiplies by 100 to convert to cents",
+        amountInCents: finalPaymentAmount,
+        amountInDollars: (finalPaymentAmount / 100).toFixed(2),
+        note: "Frontend now sends cents to Stripe/backend",
       });
 
       // Now clear discount from localStorage after capturing the values
@@ -1126,8 +1137,8 @@ export default function CheckoutContent() {
       // Create transaction record with captured values
       try {
         const transactionData: TransactionData = {
-          userId: user?.id || undefined, // ✅ Add user ID if authenticated
-          amount: finalPaymentAmount, // Use captured amount
+          userId: user?.id || undefined,
+          amount: finalPaymentAmount, // Now in cents
           currency: "USD",
           type: "charge",
           status: "completed",
@@ -1141,48 +1152,49 @@ export default function CheckoutContent() {
             plan: cartItems[0]?.name || "None",
             subscriptionType: cartItems[0]?.type || "one-time",
             paymentMethod: paymentData.paymentProvider,
-            customerName: formData.contactInfo.name || mockUser.name, // ✅ Add customer name
-            customerEmail: formData.contactInfo.email || mockUser.email, // ✅ Add customer email
+            customerName: formData.contactInfo.name || mockUser.name,
+            customerEmail: formData.contactInfo.email || mockUser.email,
             items: cartItems.map((item) => {
-              // Parse the price correctly - handle both string and number formats
               let itemPrice = 0;
               if (typeof item.price === "string") {
                 itemPrice = parseFloat(item.price.replace(/[$,]/g, ""));
               } else if (typeof item.price === "number") {
                 itemPrice = item.price;
               }
-
-              // Check if this is the actual discounted price or if we need to use originalPrice
               let finalItemPrice = itemPrice;
               if (item.originalPrice && !useMemberPrice) {
                 const originalPriceStr = String(item.originalPrice);
                 const originalPrice = parseFloat(
                   originalPriceStr.replace(/[$,]/g, "")
                 );
-                // Use the lower price (discounted)
                 finalItemPrice =
                   itemPrice < originalPrice ? itemPrice : originalPrice;
               }
-
               return {
                 id: item.id,
                 name: item.name,
                 type: item.type,
                 quantity: item.quantity || 1,
-                price: finalItemPrice, // Store as number in dollars (e.g., 70 = $70.00)
+                price: Math.round(finalItemPrice * 100), // Store as cents
                 originalPrice: item.originalPrice
-                  ? parseFloat(String(item.originalPrice).replace(/[$,]/g, ""))
+                  ? Math.round(
+                      parseFloat(
+                        String(item.originalPrice).replace(/[$,]/g, "")
+                      ) * 100
+                    )
                   : undefined,
                 memberPrice: item.memberPrice
                   ? typeof item.memberPrice === "string"
-                    ? parseFloat(item.memberPrice.replace(/[$,]/g, ""))
-                    : item.memberPrice
+                    ? Math.round(
+                        parseFloat(item.memberPrice.replace(/[$,]/g, "")) * 100
+                      )
+                    : Math.round(item.memberPrice * 100)
                   : undefined,
               };
             }),
-            discountApplied: capturedDiscountAmount > 0, // Use captured value
-            discountAmount: capturedDiscountAmount, // Use captured value in dollars
-            originalAmount: capturedOriginalAmount, // Use captured original amount
+            discountApplied: capturedDiscountAmount > 0,
+            discountAmount: Math.round(capturedDiscountAmount * 100), // cents
+            originalAmount: Math.round(capturedOriginalAmount * 100), // cents
           },
           psp: {
             provider:
@@ -1229,14 +1241,13 @@ export default function CheckoutContent() {
         });
 
         console.log("🎯 FINAL TRANSACTION DATA BEING SENT:", {
-          amountInDollars: transactionData.amount,
-          willBeStoredAsCents: Math.round(transactionData.amount * 100),
+          amountInCents: transactionData.amount,
           metadata: {
             discountApplied: transactionData.metadata?.discountApplied,
             discountAmount: transactionData.metadata?.discountAmount,
             originalAmount: transactionData.metadata?.originalAmount,
           },
-          verification: `Customer paid $${finalPaymentAmount.toFixed(
+          verification: `Customer paid $${(finalPaymentAmount / 100).toFixed(
             2
           )} (Original: $${capturedOriginalAmount.toFixed(
             2
@@ -1250,9 +1261,9 @@ export default function CheckoutContent() {
         );
         console.log("✅ Stored transaction amount:", {
           returnedAmount: transactionResult.transaction.amount,
-          expectedAmountInDollars: finalPaymentAmount,
-          sentAmountInDollars: transactionData.amount,
-          note: "Frontend sends dollars, backend converts to cents for storage",
+          expectedAmountInCents: finalPaymentAmount,
+          sentAmountInCents: transactionData.amount,
+          note: "Frontend now sends cents to backend for storage",
         });
       } catch (transactionError: any) {
         // Log error but don't fail the payment flow
@@ -1941,35 +1952,22 @@ export default function CheckoutContent() {
 
                   {/* Payment Method Selector with discount info */}
                   {(() => {
-                    const totalPrice = getTotalPrice(useMemberPrice);
+                    // getTotalPrice already handles discount correctly, so just use it directly
+                    let finalAmount = getTotalPrice(useMemberPrice);
+                    const subtotalAmount = getSubtotal(useMemberPrice);
 
-                    // If discountedTotal is already set (from discount application), use it directly
-                    // Otherwise calculate: totalPrice - discount
-                    let finalAmount;
-                    if (discountedTotal !== null && appliedDiscountAmount > 0) {
-                      // discountedTotal is already the final amount after discount (can be 0 for 100% discount)
-                      finalAmount = discountedTotal;
-                      console.log(
-                        "💰 Using pre-calculated discountedTotal:",
-                        finalAmount
-                      );
-                    } else if (appliedDiscountAmount > 0) {
-                      // Calculate discount on the fly
-                      finalAmount = totalPrice - appliedDiscountAmount;
-                      console.log("💰 Calculating discount:", {
-                        totalPrice,
-                        appliedDiscountAmount,
-                        finalAmount,
-                      });
-                    } else {
-                      // No discount
-                      finalAmount = totalPrice;
-                    }
+                    console.log("💰 Payment Amount Calculation:", {
+                      subtotalAmount,
+                      discountedTotal,
+                      appliedDiscountAmount,
+                      finalAmount,
+                      note: "getTotalPrice already includes discount logic",
+                    });
 
                     // Ensure finalAmount is never negative (but allow 0 for 100% discount)
                     if (finalAmount < 0) {
                       console.error("❌ Final amount is negative!", {
-                        totalPrice,
+                        subtotalAmount,
                         appliedDiscountAmount,
                         discountedTotal,
                         calculatedFinalAmount: finalAmount,
@@ -1984,9 +1982,9 @@ export default function CheckoutContent() {
                     }
 
                     // Log 100% discount scenario
-                    if (finalAmount === 0) {
+                    if (finalAmount === 0 && appliedDiscountAmount > 0) {
                       console.log("🎉 100% Discount Applied - Order is FREE!", {
-                        originalPrice: totalPrice,
+                        originalPrice: subtotalAmount,
                         discountAmount: appliedDiscountAmount,
                         finalAmount: 0,
                       });
@@ -1994,8 +1992,11 @@ export default function CheckoutContent() {
 
                     console.log("🔍 CHECKOUT PAYMENT DEBUG:");
                     console.log("  📦 Contract ID:", contractId);
-                    console.log("  💰 Original totalPrice:", totalPrice);
-                    console.log("  💰 Calculated finalAmount:", finalAmount);
+                    console.log("  💰 Subtotal Amount:", subtotalAmount);
+                    console.log(
+                      "  💰 Final Amount (after discount):",
+                      finalAmount
+                    );
                     console.log(
                       "  💰 Amount to pass (formatted):",
                       Math.abs(finalAmount).toFixed(2)
@@ -2013,26 +2014,27 @@ export default function CheckoutContent() {
                     console.log(
                       "  ✅ Valid discount:",
                       appliedDiscountAmount > 0 &&
-                        appliedDiscountAmount < totalPrice
+                        appliedDiscountAmount <= subtotalAmount
                     );
                     console.log("  💳 Payment Method Selector Props:", {
                       contractId,
                       amount: Math.abs(finalAmount).toFixed(2),
-                      originalAmount: totalPrice,
+                      originalAmount: subtotalAmount,
                       finalAmount,
                       discountedTotal,
                       discountCode: appliedDiscountCode,
                       discountAmount: appliedDiscountAmount,
                       willPassDiscount:
-                        appliedDiscountAmount > 0 && finalAmount < totalPrice,
+                        appliedDiscountAmount > 0 &&
+                        finalAmount < subtotalAmount,
                       isValid: finalAmount >= 0,
                       isFree: finalAmount === 0,
                     });
 
-                    // Only pass discount info if it's valid (discount < totalPrice)
+                    // Only pass discount info if it's valid (discount <= subtotal)
                     const validDiscount =
                       appliedDiscountAmount > 0 &&
-                      appliedDiscountAmount < totalPrice;
+                      appliedDiscountAmount <= subtotalAmount;
 
                     return (
                       <PaymentMethodSelector

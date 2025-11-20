@@ -165,7 +165,7 @@ function PaymentForm({
             subscriptionType,
             discountCode,
             discountAmount,
-            finalAmount,
+            amount: finalAmount, // Backend expects 'amount', not 'finalAmount'
           }),
         }
       );
