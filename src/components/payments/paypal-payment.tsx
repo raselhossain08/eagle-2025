@@ -291,6 +291,7 @@ export function PayPalPayment({
               contractId,
               subscriptionType,
               amount,
+              productName,
               discountCode,
               discountAmount,
               hasToken: !!token,
@@ -374,6 +375,7 @@ export function PayPalPayment({
                   contractId,
                   subscriptionType,
                   amount: finalAmount,
+                  productName, // ✅ ADDED: Send product name to backend
                   ...(discountCode && { discountCode }),
                   ...(discountAmount && { discountAmount }),
                 }),
@@ -382,11 +384,30 @@ export function PayPalPayment({
 
             if (!response.ok) {
               const errorData = await response.json();
+              console.error("❌ PayPal Order Creation Failed:", {
+                status: response.status,
+                statusText: response.statusText,
+                errorMessage: errorData.message,
+                errorData,
+                requestData: {
+                  contractId,
+                  subscriptionType,
+                  amount: finalAmount,
+                  productName,
+                  discountCode,
+                  discountAmount,
+                },
+              });
               throw new Error(errorData.message || `HTTP ${response.status}`);
             }
 
             const data = await response.json();
-            console.log("PayPal order created:", data.orderId);
+            console.log("✅ PayPal order created successfully:", {
+              orderId: data.orderId,
+              productName: data.productName,
+              amount: data.amount,
+              contractId: data.contractId,
+            });
 
             if (!data.orderId) {
               throw new Error("Order ID not received from server");
@@ -434,6 +455,7 @@ export function PayPalPayment({
                   contractId,
                   subscriptionType,
                   amount: finalAmount,
+                  productName, // ✅ ADDED: Send product name to backend
                   ...(discountCode && { discountCode }),
                   ...(discountAmount && { discountAmount }),
                 }),

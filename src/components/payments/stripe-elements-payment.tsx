@@ -176,6 +176,7 @@ function PaymentForm({
           body: JSON.stringify({
             contractId,
             subscriptionType,
+            productName, // ✅ ADDED: Send product name to backend
             discountCode,
             discountAmount,
             amount: finalAmount, // Backend expects 'amount', not 'finalAmount'
@@ -184,17 +185,34 @@ function PaymentForm({
       );
 
       const intentData = await intentResponse.json();
-      console.log("✅ Payment intent created:", {
-        success: intentData.success,
-        paymentIntentId: intentData.paymentIntentId,
-        hasClientSecret: !!intentData.clientSecret,
-      });
 
       if (!intentResponse.ok) {
+        console.error("❌ Stripe Payment Intent Creation Failed:", {
+          status: intentResponse.status,
+          statusText: intentResponse.statusText,
+          errorMessage: intentData.message,
+          errorData: intentData,
+          requestData: {
+            contractId,
+            subscriptionType,
+            productName,
+            discountCode,
+            discountAmount,
+            amount: finalAmount,
+          },
+        });
         throw new Error(
           intentData.message || "Failed to create payment intent"
         );
       }
+
+      console.log("✅ Payment intent created successfully:", {
+        success: intentData.success,
+        paymentIntentId: intentData.paymentIntentId,
+        productName: intentData.productName,
+        amount: intentData.amount,
+        hasClientSecret: !!intentData.clientSecret,
+      });
 
       const { clientSecret, paymentIntentId } = intentData;
 
@@ -259,6 +277,7 @@ function PaymentForm({
           body: JSON.stringify({
             paymentIntentId,
             contractId,
+            productName, // ✅ ADDED: Send product name to backend
             discountCode,
             discountAmount,
             amount: Math.round(finalAmount * 100), // Send in cents (Stripe standard)
@@ -267,11 +286,26 @@ function PaymentForm({
       );
 
       const confirmData = await confirmResponse.json();
-      console.log("✅ Backend confirmation response:", confirmData);
 
       if (!confirmResponse.ok) {
+        console.error("❌ Stripe Payment Confirmation Failed:", {
+          status: confirmResponse.status,
+          statusText: confirmResponse.statusText,
+          errorMessage: confirmData.message,
+          errorData: confirmData,
+          requestData: {
+            paymentIntentId,
+            contractId,
+            productName,
+            discountCode,
+            discountAmount,
+            amount: Math.round(finalAmount * 100),
+          },
+        });
         throw new Error(confirmData.message || "Payment confirmation failed");
       }
+
+      console.log("✅ Backend confirmation response:", confirmData);
 
       const paymentData = {
         paymentMethod: "stripe",
